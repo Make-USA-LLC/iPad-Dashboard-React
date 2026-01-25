@@ -1,0 +1,395 @@
+/* src/Workers.css */
+
+.wm-wrapper {
+    height: 100vh;
+    width: 100%;
+    overflow-y: auto;
+    background: #f4f7f6;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.wm-container {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 0 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.wm-top-bar {
+    background: white;
+    padding: 15px 40px;
+    border-bottom: 1px solid #e1e5eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.wm-card {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-bottom: 30px;
+}
+
+/* HEADER ROW */
+.wm-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.wm-header-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.wm-counter-badge {
+    background: #e0e6ed;
+    color: #5c7c93;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+/* --- ADD WORKER FORM (Fixed Layout) --- */
+.wm-add-box {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    display: flex;
+    gap: 15px;
+    align-items: flex-end; /* Aligns inputs and button to bottom */
+    margin-bottom: 30px;
+    border: 1px solid #eee;
+}
+
+/* FIXED WIDTH for ID (Small) */
+.wm-group-small { 
+    flex: 0 0 160px; /* Does not grow, fixed size */
+}
+
+/* FLUID WIDTH for Name (Large) */
+.wm-group-large { 
+    flex: 1; /* Takes all remaining space */
+}
+
+.wm-input-label {
+    display: block;
+    font-size: 11px;
+    font-weight: bold;
+    color: #7f8c8d;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+}
+
+.wm-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #dfe4e8;
+    border-radius: 6px;
+    font-size: 14px;
+    box-sizing: border-box;
+    transition: 0.2s;
+    height: 42px; /* Matches button height */
+}
+.wm-input:focus {
+    border-color: #3498db;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(52,152,219,0.1);
+}
+
+.wm-search-bar {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    width: 250px;
+    padding-left: 35px;
+    background: #fff url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%23999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>') no-repeat 10px center;
+}
+
+/* TABLE */
+.wm-table { width: 100%; border-collapse: collapse; }
+
+.wm-table th {
+    text-align: left;
+    padding: 15px;
+    background: #fff;
+    color: #95a5a6;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    border-bottom: 2px solid #eee;
+}
+
+.wm-table td {
+    padding: 15px;
+    border-bottom: 1px solid #f0f2f5;
+    font-size: 14px;
+    color: #2c3e50;
+}
+
+.wm-table tr:hover { background: #fafbfc; }
+
+.wm-id-badge {
+    font-family: monospace;
+    background: #eceff1;
+    padding: 4px 8px;
+    border-radius: 4px;
+    color: #455a64;
+    font-weight: bold;
+}
+
+/* BUTTONS */
+.btn-green {
+    background: #27ae60;
+    color: white;
+    border: none;
+    padding: 0 25px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    height: 42px; /* Fixed height matching inputs */
+    transition: 0.2s;
+    white-space: nowrap; /* Prevent text wrapping */
+    
+    /* Ensure it doesn't stretch */
+    width: auto; 
+    flex-shrink: 0;
+}
+.btn-green:hover { background: #219150; }
+
+.btn-del {
+    color: #e74c3c;
+    background: white;
+    border: 1px solid #e74c3c;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: 0.2s;
+}
+.btn-del:hover { background: #e74c3c; color: white; }
+
+.btn-link {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    color: #2c3e50;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    text-decoration: none;
+}
+
+.wm-denied { text-align: center; padding: 50px; color: #c0392b; font-weight: bold; font-size: 18px; }/* src/Workers.css */
+
+.wm-wrapper {
+    height: 100vh;
+    width: 100%;
+    overflow-y: auto;
+    background: #f4f7f6;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.wm-container {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 0 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.wm-top-bar {
+    background: white;
+    padding: 15px 40px;
+    border-bottom: 1px solid #e1e5eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.wm-card {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-bottom: 30px;
+}
+
+/* HEADER ROW */
+.wm-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.wm-header-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.wm-counter-badge {
+    background: #e0e6ed;
+    color: #5c7c93;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+/* --- ADD WORKER FORM (Fixed Layout) --- */
+.wm-add-box {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    display: flex;
+    gap: 15px;
+    align-items: flex-end; /* Aligns inputs and button to bottom */
+    margin-bottom: 30px;
+    border: 1px solid #eee;
+}
+
+/* FIXED WIDTH for ID (Small) */
+.wm-group-small { 
+    flex: 0 0 160px; /* Does not grow, fixed size */
+}
+
+/* FLUID WIDTH for Name (Large) */
+.wm-group-large { 
+    flex: 1; /* Takes all remaining space */
+}
+
+.wm-input-label {
+    display: block;
+    font-size: 11px;
+    font-weight: bold;
+    color: #7f8c8d;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+}
+
+.wm-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #dfe4e8;
+    border-radius: 6px;
+    font-size: 14px;
+    box-sizing: border-box;
+    transition: 0.2s;
+    height: 42px; /* Matches button height */
+}
+.wm-input:focus {
+    border-color: #3498db;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(52,152,219,0.1);
+}
+
+.wm-search-bar {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    width: 250px;
+    padding-left: 35px;
+    background: #fff url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%23999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>') no-repeat 10px center;
+}
+
+/* TABLE */
+.wm-table { width: 100%; border-collapse: collapse; }
+
+.wm-table th {
+    text-align: left;
+    padding: 15px;
+    background: #fff;
+    color: #95a5a6;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    border-bottom: 2px solid #eee;
+}
+
+.wm-table td {
+    padding: 15px;
+    border-bottom: 1px solid #f0f2f5;
+    font-size: 14px;
+    color: #2c3e50;
+}
+
+.wm-table tr:hover { background: #fafbfc; }
+
+.wm-id-badge {
+    font-family: monospace;
+    background: #eceff1;
+    padding: 4px 8px;
+    border-radius: 4px;
+    color: #455a64;
+    font-weight: bold;
+}
+
+/* BUTTONS */
+.btn-green {
+    background: #27ae60;
+    color: white;
+    border: none;
+    padding: 0 25px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    height: 42px; /* Fixed height matching inputs */
+    transition: 0.2s;
+    white-space: nowrap; /* Prevent text wrapping */
+    
+    /* Ensure it doesn't stretch */
+    width: auto; 
+    flex-shrink: 0;
+}
+.btn-green:hover { background: #219150; }
+
+.btn-del {
+    color: #e74c3c;
+    background: white;
+    border: 1px solid #e74c3c;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: 0.2s;
+}
+.btn-del:hover { background: #e74c3c; color: white; }
+
+.btn-link {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    color: #2c3e50;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    text-decoration: none;
+}
+
+.wm-denied { text-align: center; padding: 50px; color: #c0392b; font-weight: bold; font-size: 18px; }

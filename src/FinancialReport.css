@@ -1,0 +1,127 @@
+/* src/FinancialReport.css */
+
+.fr-wrapper {
+    height: 100vh;
+    width: 100vw;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 12px;
+    overflow: hidden;
+}
+
+/* TOP CONTROL BAR */
+.fr-top-bar {
+    background: #f8f9fa;
+    padding: 10px 20px;
+    border-bottom: 1px solid #ccc;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    height: 40px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    z-index: 20;
+}
+
+/* TABLE CONTAINER */
+.fr-table-container {
+    flex-grow: 1;
+    overflow: auto;
+    position: relative;
+    width: 100%;
+}
+
+/* TABLE STYLES */
+.fr-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+}
+
+.fr-table th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: 8px;
+    text-align: center;
+    white-space: nowrap;
+    outline: 1px solid #999; /* Darker outline for definition */
+    border: none;
+    height: 35px;
+    background: #eee; /* Fallback */
+}
+
+.fr-table td {
+    border: 1px solid #ccc;
+    padding: 4px 8px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* --- HEADER COLORS (Increased Specificity) --- */
+.fr-table th.bg-green { 
+    background-color: #d5e8d4; 
+    color: black; 
+}
+
+.fr-table th.bg-yellow { 
+    background-color: #ffff00; 
+    color: black; 
+    font-weight: bold; 
+}
+
+.fr-table th.bg-blue { 
+    background-color: #2e86c1; /* Adjusted to a nicer Excel-like blue */
+    color: white; 
+}
+
+/* DATA CELL COLORS */
+.bg-red-cell { 
+    background-color: #ffcccc; 
+    color: #990000; 
+    font-weight: bold; 
+}
+
+.bg-pending { 
+    background-color: #fff3cd; 
+    color: #856404; 
+    font-weight: bold; 
+    text-align: left; 
+    padding-left: 15px !important; 
+}
+
+.align-left { text-align: left; }
+.align-right { text-align: right; }
+
+/* CONTROLS */
+.fr-select {
+    padding: 6px;
+    border-radius: 4px;
+    border: 1px solid #999;
+    font-weight: bold;
+}
+
+.fr-btn {
+    padding: 6px 15px;
+    border: 1px solid #999;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 12px;
+}
+.btn-excel { background: #27ae60; color: white; border: none; margin-left: auto; }
+.btn-print { background: #fff; color: #333; }
+
+.badge { background: #333; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 5px; }
+
+.fr-denied { text-align: center; padding: 50px; color: #c0392b; font-weight: bold; font-size: 18px; }
+.fr-loading { padding: 20px; text-align: center; font-size: 14px; color: #666; }
+
+@media print {
+    .fr-top-bar { display: none; }
+    .fr-wrapper { height: auto; overflow: visible; }
+    .fr-table-container { overflow: visible; }
+    .fr-table th { position: static; }
+}

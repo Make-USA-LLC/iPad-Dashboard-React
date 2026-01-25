@@ -1,0 +1,22 @@
+.portal-wrapper { height: 100vh; overflow-y: auto; background: #f0f2f5; font-family: 'Segoe UI', sans-serif; }
+.portal-container { max-width: 800px; margin: 20px auto; padding: 0 15px; }
+
+.app-header { background: #2c3e50; padding: 15px 20px; color: white; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+
+.profile-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; display: flex; justify-content: space-between; border-left: 5px solid #3498db; }
+.user-name { font-size: 24px; font-weight: bold; color: #2c3e50; }
+
+.controls { display: flex; gap: 10px; margin-bottom: 20px; }
+.chip { background: #fff; border: 1px solid #ddd; padding: 8px 16px; border-radius: 20px; cursor: pointer; }
+.chip.active { background: #3498db; color: white; border-color: #3498db; }
+
+.slip-card { background: white; border-radius: 12px; margin-bottom: 20px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+.slip-header { background: #f8f9fa; padding: 15px; display: flex; justify-content: space-between; font-weight: bold; border-bottom: 1px solid #eee; }
+.slip-amount { color: #27ae60; font-family: monospace; font-size: 18px; }
+
+.job-row { padding: 15px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; }
+.job-title { font-weight: bold; color: #2c3e50; }
+.job-money { text-align: right; font-weight: bold; color: #2c3e50; }
+
+.total-summary { background: #34495e; color: white; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px; }
+.total-val { font-size: 36px; font-weight: bold; }

@@ -1,0 +1,73 @@
+/* src/Commissions.css */
+
+.commissions-page-wrapper {
+    height: 100vh;
+    width: 100%;
+    overflow-y: auto;
+    background: #f4f7f6;
+    display: flex;
+    flex-direction: column;
+}
+
+.commissions-container {
+    max-width: 1400px;
+    margin: 30px auto;
+    padding: 0 20px 80px 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.commissions-top-bar {
+    background: white;
+    padding: 15px 40px;
+    border-bottom: 1px solid #e1e5eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+/* OVERVIEW PANEL */
+.overview-panel { background: white; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 20px; }
+.overview-header { background: #8e44ad; color: white; padding: 15px 20px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+.overview-total { background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 12px; font-size: 14px; }
+
+/* AGENT ROWS */
+.agent-row { display: flex; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid #eee; font-size: 14px; }
+.agent-row:last-child { border-bottom: none; }
+.agent-name { font-weight: 600; color: #2c3e50; display: flex; align-items: center; gap: 8px; }
+.agent-val { font-weight: bold; color: #8e44ad; }
+
+/* GRID */
+.commissions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 25px; }
+
+/* CARD STYLES */
+.commissions-page-wrapper .project-card { 
+    background: white; 
+    border-radius: 12px; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+    overflow: hidden; 
+    display: flex; 
+    flex-direction: column; 
+    border-left: 4px solid #8e44ad; 
+}
+
+.commissions-page-wrapper .card-header { padding: 15px; background: #fff; border-bottom: 1px solid #f0f0f0; }
+.project-name { font-size: 16px; font-weight: bold; color: #2c3e50; }
+.project-meta { font-size: 12px; color: #7f8c8d; margin-top: 4px; display: flex; justify-content: space-between; }
+
+.card-body { padding: 15px; flex-grow: 1; }
+.data-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: #555; }
+.data-val { font-weight: bold; color: #2c3e50; }
+.highlight-row { background: #fbfbfb; padding: 8px; border-radius: 6px; margin-top: 10px; border: 1px dashed #ddd; }
+.comm-total { font-size: 18px; color: #8e44ad; font-weight: bold; }
+
+.card-footer { padding: 12px; border-top: 1px solid #eee; background: #f9f9f9; text-align: right; }
+
+.btn-pay { background: #27ae60; color: white; padding: 8px 16px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; font-size: 13px; }
+.btn-undo { background: #95a5a6; color: white; padding: 8px 16px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; font-size: 13px; }
+
+.status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+.badge-paid { background: #d4efdf; color: #1e8449; }

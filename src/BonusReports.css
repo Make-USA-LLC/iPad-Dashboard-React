@@ -1,0 +1,150 @@
+/* src/BonusReports.css */
+
+.reports-page-wrapper {
+    height: 100vh;
+    width: 100%;
+    overflow-y: auto;
+    background: #f4f7f6;
+}
+
+.reports-container {
+    max-width: 1000px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+.reports-top-bar {
+    background: white;
+    padding: 15px 40px;
+    border-bottom: 1px solid #e1e5eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.control-panel {
+    background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    display: flex; flex-direction: column; gap: 20px; margin-bottom: 30px;
+}
+
+.control-row { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; justify-content: space-between; }
+.input-group { display: flex; flex-direction: column; gap: 5px; }
+.input-group label { font-size:11px; font-weight:bold; color:#777; text-transform: uppercase; letter-spacing: 0.5px; }
+.report-select { padding: 10px; border: 1px solid #ddd; border-radius: 6px; min-width: 200px; }
+
+.btn { padding: 10px 20px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; transition: 0.2s; white-space: nowrap; }
+.btn-print { background: #2c3e50; color: white; }
+.btn-print:hover { background: #1a252f; }
+.btn-csv { background: #fff; border: 1px solid #ccc; color: #333; }
+.btn-csv:hover { background: #f9f9f9; }
+.btn-toggle { background: #e0e0e0; color: #555; border: 1px solid #ccc; }
+.btn-toggle.active { background: #27ae60; color: white; border-color: #219150; }
+
+.checkbox-wrapper { display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; background: #f9f9f9; padding: 8px 12px; border-radius: 6px; border: 1px solid #eee; }
+.checkbox-wrapper input { cursor: pointer; width: 16px; height: 16px; accent-color: #c0392b; }
+
+/* SUMMARY CARD */
+.summary-card { background: #34495e; color: white; padding: 20px; border-radius: 12px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+
+/* SLIP STYLES */
+.slip-container { display: grid; gap: 30px; padding-bottom: 50px; }
+.pay-slip { background: white; border: 1px solid #eee; padding: 40px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); max-width: 800px; margin: 0 auto; width: 100%; box-sizing: border-box; position: relative; }
+
+.slip-header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; }
+.company-branding { display: flex; gap: 15px; align-items: center; }
+.company-logo { height: 50px; width: auto; object-fit: contain; }
+.company-details { font-size: 11px; color: #555; line-height: 1.4; }
+
+.period-box { text-align: right; }
+.period-label { font-size: 11px; color: #666; font-weight: bold; letter-spacing: 1px; }
+.period-date { font-weight: bold; font-family: monospace; font-size: 14px; margin-top: 4px; }
+
+.emp-section { border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+.emp-name { font-size: 28px; font-weight: 800; color: #000; text-transform: uppercase; letter-spacing: -0.5px; }
+
+/* SLIP TABLE */
+.slip-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 20px; }
+.slip-table th { text-align: left; border-bottom: 2px solid #000; padding: 8px 4px; text-transform: uppercase; font-size: 11px; font-weight: bold; color: #333; }
+.slip-table td { padding: 12px 4px; border-bottom: 1px solid #eee; vertical-align: top; }
+
+.role-badge { font-size: 9px; padding: 3px 6px; background: #f0f0f0; border-radius: 4px; font-weight: bold; text-transform: uppercase; color: #555; border: 1px solid #ddd; }
+.ineligible-badge { font-size: 9px; padding: 2px 6px; background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; border-radius: 4px; font-weight: bold; text-transform: uppercase; margin-left: 5px; }
+
+.total-row { display: flex; justify-content: flex-end; margin-top: 20px; padding-top: 15px; border-top: 2px solid #000; }
+.total-box { text-align: right; }
+
+.cut-line { display: none; margin-top: 60px; border-top: 1px dashed #999; position: relative; width: 100%; height: 10px; }
+.cut-line::after { content: "Manager Signature: _______________________"; position: absolute; right: 0; top: -25px; font-size: 12px; background: white; padding-left: 10px; color: #333; }
+
+/* === FIXED PRINT RULES === */
+@media print {
+    @page { 
+        size: auto; 
+        margin: 0mm; 
+    } 
+    
+    body { 
+        background: white; 
+        font-size: 12pt; 
+        color: black; 
+        margin: 0; 
+        padding: 0; 
+    }
+
+    /* Hide UI Elements */
+    .reports-top-bar, .control-panel, .summary-card, .btn { 
+        display: none !important; 
+    }
+
+    .reports-page-wrapper { 
+        overflow: visible; 
+        height: auto; 
+        display: block; 
+    }
+
+    /* 1. Remove Grid Gap */
+    .reports-container, .slip-container { 
+        max-width: 100%; 
+        margin: 0; 
+        padding: 0; 
+        display: block; /* Disables the grid gap */
+    }
+    
+    /* 2. Fix Slip Dimensions */
+    .pay-slip { 
+        border: none; 
+        box-shadow: none; 
+        border-radius: 0; 
+        margin: 0; 
+        width: 100%;
+        
+        /* Instead of fixed 100vh, we use min-height. 
+           This fills the page but allows it to shrink slightly to avoid overflow. */
+        min-height: 270mm; 
+        box-sizing: border-box;
+        padding: 40px;
+
+        /* Force Page Breaks */
+        page-break-after: always; 
+        break-after: page; 
+        position: relative;
+    }
+
+    .pay-slip:last-child { 
+        page-break-after: auto; 
+        break-after: auto;
+    }
+
+    .cut-line { 
+        display: block; 
+        position: absolute; 
+        bottom: 50px; 
+        width: calc(100% - 80px); /* Account for padding */
+    }
+
+    .role-badge { border: 1px solid #000; background: none; color: #000; }
+    .ineligible-badge { border: 1px solid #000; color: #000; background: none; }
+}

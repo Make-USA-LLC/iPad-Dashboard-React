@@ -1,0 +1,150 @@
+/* src/FinanceSetup.css */
+
+.fs-wrapper {
+    height: 100vh;
+    width: 100%;
+    overflow-y: auto;
+    background: #f4f7f6;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.fs-container {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.fs-top-bar {
+    background: white;
+    padding: 15px 40px;
+    border-bottom: 1px solid #e1e5eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+/* CARDS */
+.fs-card {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+    transition: opacity 0.3s;
+}
+
+.fs-card.read-only {
+    opacity: 0.7;
+    pointer-events: none; /* Optional: completely disable interaction */
+}
+
+.fs-card h2 {
+    margin-top: 0;
+    color: #2c3e50;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    font-size: 20px;
+}
+
+/* FORMS */
+.fs-form-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    align-items: flex-end;
+}
+
+.fs-label {
+    display: block;
+    font-size: 12px;
+    font-weight: bold;
+    color: #7f8c8d;
+    margin-bottom: 5px;
+}
+
+.fs-input {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    flex: 1;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.fs-input-suffix {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+.fs-input-suffix input {
+    padding-right: 30px;
+}
+
+.fs-suffix-text {
+    position: absolute;
+    right: 10px;
+    color: #999;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* BUTTONS */
+.btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    color: white;
+    transition: 0.2s;
+}
+.btn-green { background: #27ae60; }
+.btn-green:hover { background: #219150; }
+
+.btn-red-small {
+    background: #e74c3c;
+    padding: 5px 10px;
+    font-size: 12px;
+    margin-left: 10px;
+    border-radius: 4px;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+.btn-red-small:hover { background: #c0392b; }
+
+.btn-back { background: none; color: #2c3e50; font-weight: bold; cursor: pointer; border: none; font-size: 16px; }
+
+/* LISTS */
+.fs-list { list-style: none; padding: 0; margin: 0; border: 1px solid #eee; border-radius: 6px; overflow: hidden; }
+.fs-list li {
+    background: #f9f9f9;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.fs-list li:last-child { border-bottom: none; }
+
+.fs-section-desc {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 15px;
+    font-style: italic;
+    background: #f0f8ff;
+    padding: 10px;
+    border-radius: 6px;
+    border-left: 4px solid #3498db;
+}
+
+.fs-denied { text-align: center; padding: 50px; }

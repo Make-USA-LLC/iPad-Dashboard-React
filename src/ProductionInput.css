@@ -1,0 +1,143 @@
+/* src/ProductionInput.css */
+
+.pi-wrapper {
+    height: 100vh;
+    width: 100%;
+    overflow-y: auto;
+    background: #f4f7f6;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.pi-container {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 0 20px 80px 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.pi-top-bar {
+    background: white;
+    padding: 15px 40px;
+    border-bottom: 1px solid #e1e5eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+/* TASK CARD */
+.pi-task-card {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+    border-left: 5px solid #3498db;
+}
+
+.pi-task-header { display: flex; justify-content: space-between; margin-bottom: 20px; align-items: flex-start; }
+.pi-project-title { font-size: 18px; font-weight: bold; color: #2c3e50; }
+.pi-project-meta { font-size: 13px; color: #7f8c8d; margin-top: 4px; }
+
+.pi-input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+.pi-label { display: block; font-size: 11px; font-weight: bold; color: #7f8c8d; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* INPUTS */
+.pi-select, .pi-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #dfe4e8;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+.pi-select:focus, .pi-input:focus { border-color: #3498db; outline: none; box-shadow: 0 0 0 3px rgba(52,152,219,0.1); }
+
+/* PL GROUP STYLING */
+.pi-pl-group { 
+    display: flex; 
+    align-items: center; 
+    border: 1px solid #dfe4e8; 
+    border-radius: 6px; 
+    background: white; 
+    cursor: text; 
+}
+.pi-pl-group:focus-within { border-color: #3498db; box-shadow: 0 0 0 3px rgba(52,152,219,0.1); }
+
+.pi-pl-prefix { 
+    color: #2c3e50; 
+    padding-left: 12px; 
+    font-size: 14px; 
+    user-select: none; 
+}
+
+.pi-pl-input { 
+    border: none; 
+    background: transparent; 
+    padding: 12px 0 12px 0; 
+    font-size: 14px; 
+    flex-grow: 1; 
+    outline: none; 
+    color: #2c3e50; 
+    margin-left: 2px;
+}
+
+/* --- FOOTER & BUTTONS --- */
+
+.pi-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.pi-action-group {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.btn { 
+    padding: 8px 20px; 
+    border-radius: 6px; 
+    cursor: pointer; 
+    font-weight: bold; 
+    border: none; 
+    color: white; 
+    font-size: 13px; 
+    transition: 0.2s;
+    
+    /* PREVENT STRETCHING */
+    width: auto;
+    min-width: fit-content;
+}
+.btn-blue { background: #3498db; }
+.btn-blue:hover { background: #2980b9; }
+
+.btn-text { background: none; padding: 0 10px; font-weight: bold; cursor: pointer; border: none; font-size: 13px; display: flex; align-items: center; gap: 5px; }
+.btn-red-text { color: #e74c3c; }
+.btn-orange-text { color: #f39c12; }
+.btn-text:hover { text-decoration: underline; }
+
+.pi-time-badge { background: #ecf0f1; color: #555; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+
+/* CHECKBOX & SECTIONS */
+.pi-chk-container { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer; user-select: none; }
+.pi-chk-label { font-weight: bold; color: #2c3e50; font-size: 14px; }
+
+.pi-bonus-box { border: 1px solid #e1e5eb; background: #fff; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+.pi-reason-box { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee; animation: fadeIn 0.2s; }
+
+.pi-adjust-box { background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #e1e5eb; }
+
+.pi-denied { text-align: center; padding: 50px; color: #c0392b; font-weight: bold; font-size: 18px; }
+.pi-empty { text-align: center; margin-top: 50px; color: #27ae60; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }

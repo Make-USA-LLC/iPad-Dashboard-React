@@ -1,0 +1,125 @@
+/* src/DropdownManager.css */
+
+.dm-wrapper {
+    height: 100vh;
+    width: 100%;
+    overflow-y: auto;
+    background: #f4f7f6;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.dm-container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.dm-top-bar {
+    background: white;
+    padding: 15px 40px;
+    border-bottom: 1px solid #e1e5eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+/* GRID LAYOUT */
+.dm-split-view {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.dm-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.dm-card h2 {
+    margin-top: 0;
+    color: #2c3e50;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    font-size: 18px;
+}
+
+.dm-input-group {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 15px;
+}
+
+.dm-input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.btn {
+    padding: 8px 15px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    color: white;
+    transition: 0.2s;
+}
+.btn-green { background: #27ae60; }
+.btn-green:hover { background: #219150; }
+
+.btn-red-small {
+    background: #e74c3c;
+    padding: 4px 10px;
+    font-size: 11px;
+    border-radius: 4px;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+.btn-red-small:hover { background: #c0392b; }
+
+.btn-text { background: none; color: #2c3e50; font-weight: bold; cursor: pointer; border: none; font-size: 16px; }
+
+/* LIST */
+.dm-list {
+    list-style: none;
+    padding: 0;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    max-height: 500px;
+    overflow-y: auto;
+    flex-grow: 1; /* Fills remaining height */
+    margin: 0;
+}
+
+.dm-list li {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+    font-size: 13px;
+}
+.dm-list li:last-child { border-bottom: none; }
+.dm-list li:hover { background: #f9f9f9; }
+
+.dm-empty { padding: 15px; color: #999; text-align: center; font-size: 13px; }
+
+/* READ ONLY MODE */
+.dm-card.read-only .dm-input-group { display: none; }
+.dm-card.read-only .btn-red-small { display: none; }

@@ -1,0 +1,61 @@
+:root {
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: light;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* RESET: Ensure the app takes up the full screen */
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* MAIN SCROLLBAR LOGIC */
+body {
+  background-color: #f4f7f6;
+  
+  /* 1. Allows content to scroll */
+  overflow-y: auto;
+  
+  /* 2. (Chrome/Edge only) Places scrollbar on top of content to avoid layout shift */
+  overflow-y: overlay; 
+}
+
+/* 3. Define width but keep track invisible */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  background-color: transparent;
+}
+
+/* 4. Thumb is invisible by default */
+::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 4px;
+}
+
+/* 5. Thumb appears ONLY when you hover over the window */
+body:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(150, 150, 150, 0.5); /* Semi-transparent grey */
+}
+
+/* 6. Thumb gets darker when you grab it */
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 100, 100, 0.8);
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
+}

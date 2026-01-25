@@ -1,0 +1,144 @@
+/* src/ArchiveUpload.css */
+
+.au-wrapper {
+    height: 100vh;
+    width: 100%;
+    overflow-y: auto;
+    background: #f4f7f6;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.au-container {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 0 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.au-top-bar {
+    background: white;
+    padding: 15px 40px;
+    border-bottom: 1px solid #e1e5eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.au-card {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-bottom: 30px;
+}
+
+.au-card h2 {
+    margin-top: 0;
+    color: #2c3e50;
+    font-size: 24px;
+}
+
+.au-card p {
+    color: #7f8c8d;
+    margin-bottom: 20px;
+}
+
+/* UPLOAD ZONE */
+.au-upload-zone {
+    border: 2px dashed #bdc3c7;
+    border-radius: 8px;
+    padding: 40px;
+    text-align: center;
+    background: #fafafa;
+    transition: 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.au-upload-zone:hover {
+    border-color: #3498db;
+    background: #f0f8ff;
+}
+
+.au-file-input { display: none; }
+
+.au-custom-file-btn {
+    background: #34495e;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-bottom: 10px;
+    display: inline-block;
+}
+
+.au-filename {
+    color: #7f8c8d;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+/* BUTTONS */
+.btn-green {
+    background: #27ae60;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 20px;
+    width: 100%;
+    transition: 0.2s;
+}
+.btn-green:hover { background: #219150; }
+.btn-green:disabled { background: #ccc; cursor: not-allowed; }
+
+.btn-link {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    color: #2c3e50;
+    font-size: 14px;
+    text-decoration: none;
+}
+.btn-link:hover { text-decoration: underline; }
+
+.btn-blue-outline {
+    border: 1px solid #3498db;
+    background: none;
+    color: #3498db;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 13px;
+    margin-right: 10px;
+}
+
+/* STATUS MESSAGES */
+.au-status-msg { margin-top: 20px; font-weight: bold; text-align: center; }
+.au-status-success { color: #27ae60; }
+.au-status-error { color: #e74c3c; }
+
+/* ACCESS DENIED */
+.au-locked-ui {
+    text-align: center;
+    color: #e74c3c;
+    padding: 20px;
+    background: #fff5f5;
+    border-radius: 8px;
+    border: 1px solid #ffcccc;
+}

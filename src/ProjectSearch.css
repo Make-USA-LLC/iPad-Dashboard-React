@@ -1,0 +1,138 @@
+/* src/ProjectSearch.css */
+
+.ps-wrapper {
+    height: 100vh;
+    width: 100%;
+    overflow-y: auto;
+    background: #f4f7f6;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.ps-container {
+    max-width: 98%;
+    margin: 30px auto;
+    padding: 0 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.ps-top-bar {
+    background: white;
+    padding: 15px 40px;
+    border-bottom: 1px solid #e1e5eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+/* FILTER CARD */
+.ps-filter-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    position: relative;
+}
+
+.ps-input-group { flex: 1; min-width: 150px; }
+.ps-label { display: block; font-size: 11px; font-weight: bold; color: #7f8c8d; margin-bottom: 5px; text-transform: uppercase; }
+
+.ps-input, .ps-select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #dfe4e8;
+    border-radius: 6px;
+    box-sizing: border-box;
+    height: 40px;
+    font-size: 13px;
+}
+
+.ps-range-group { display: flex; gap: 5px; }
+.ps-range-group input { text-align: center; }
+
+/* BUTTONS */
+.btn { 
+    height: 40px; padding: 0 20px; border-radius: 6px; border: none; 
+    font-weight: bold; cursor: pointer; color: white; 
+    display: flex; align-items: center; gap: 8px; font-size: 13px; 
+}
+.btn-search { background: #3498db; }
+.btn-clear { background: #95a5a6; }
+.btn-export { background: #27ae60; }
+.btn-cols { background: #2c3e50; position: relative; }
+
+.btn-link { background: none; color: #2c3e50; font-weight: bold; cursor: pointer; border: none; font-size: 14px; text-decoration: none; }
+.btn-link:hover { text-decoration: underline; }
+
+.btn-upload { 
+    border: 1px solid #3498db; background: none; color: #3498db; 
+    padding: 8px 15px; border-radius: 4px; cursor: pointer; 
+    font-weight: bold; font-size: 13px; margin-right: 10px; 
+}
+
+/* COLUMN MENU */
+.ps-col-dropdown {
+    position: absolute;
+    top: 100%; right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-radius: 8px;
+    padding: 15px;
+    z-index: 1000;
+    min-width: 250px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+.ps-col-option { display: flex; align-items: center; gap: 10px; padding: 6px 0; cursor: pointer; font-size: 13px; border-bottom: 1px solid #f9f9f9; }
+.ps-col-option:hover { background: #f9f9f9; }
+
+/* RESULTS TABLE */
+.ps-results-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.ps-table { width: 100%; border-collapse: collapse; font-size: 12px; white-space: nowrap; }
+.ps-table th { 
+    background: #f8f9fa; color: #7f8c8d; text-align: left; padding: 12px; 
+    font-weight: 600; border-bottom: 2px solid #eee; text-transform: uppercase; 
+    cursor: pointer; user-select: none; 
+}
+.ps-table th:hover { background: #e9ecef; color: #2c3e50; }
+.ps-table td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; color: #2c3e50; }
+.ps-table tr:hover { background: #fcfcfc; }
+
+.ps-empty { text-align: center; padding: 50px; color: #95a5a6; }
+
+/* BADGES */
+.ps-badge { padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; text-transform: uppercase; }
+.src-live { background: #e8f6f3; color: #27ae60; } 
+.src-archive { background: #fff8e1; color: #f39c12; }
+
+.ps-pagination { 
+    padding: 15px; background: #fafafa; border-top: 1px solid #eee; 
+    display: flex; justify-content: flex-end; align-items: center; 
+    gap: 15px; font-size: 13px; color: #555; 
+}
+.ps-page-btn { 
+    padding: 5px 12px; background: white; border: 1px solid #ddd; 
+    border-radius: 4px; cursor: pointer; font-weight: bold; color: #333; 
+}
+.ps-page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.ps-denied { text-align: center; padding: 50px; font-size: 20px; color: #e74c3c; font-weight: bold; }

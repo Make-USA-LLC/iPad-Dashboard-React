@@ -1,0 +1,69 @@
+/* src/Kiosk.css */
+
+.kiosk-wrapper {
+    font-family: 'Segoe UI', sans-serif;
+    background: #151f28;
+    margin: 0;
+    min-height: 100vh;
+    overflow-y: auto;
+    color: white;
+}
+
+.kiosk-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+    gap: 20px; 
+    padding: 20px; 
+}
+
+.kiosk-card { 
+    background: #1e2b36; 
+    border-radius: 8px; 
+    color: white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
+    overflow: hidden; 
+    border: 1px solid #2c3e50;
+    display: flex;
+    flex-direction: column;
+}
+
+.k-card-header { 
+    background: #0d1319; 
+    padding: 15px; 
+    display: flex; 
+    justify-content: space-between; 
+    border-bottom: 1px solid #2c3e50; 
+}
+
+.k-card-id { font-weight: bold; color: #3498db; font-size: 16px; text-transform: uppercase; }
+.k-card-status { font-weight: bold; padding: 2px 8px; border-radius: 4px; font-size: 11px; text-transform: uppercase; }
+
+.k-st-active { background: #27ae60; color: white; }
+.k-st-paused { background: #f1c40f; color: #000; }
+.k-st-idle { background: #7f8c8d; color: white; }
+
+.k-card-body { padding: 15px; flex-grow: 1; }
+.k-card-project { font-size: 18px; font-weight: bold; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.k-card-meta { color: #bdc3c7; font-size: 13px; }
+
+.k-card-timer { 
+    background: #000; 
+    color: #2ecc71; 
+    padding: 15px; 
+    text-align: center; 
+    font-family: 'Courier New', monospace; 
+    font-size: 32px; 
+    font-weight: bold; 
+}
+
+.k-timer-paused { color: #f1c40f; }
+.k-timer-idle { color: #7f8c8d; }
+
+.kiosk-loading {
+    display: flex;
+    height: 100vh;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    color: #bdc3c7;
+}

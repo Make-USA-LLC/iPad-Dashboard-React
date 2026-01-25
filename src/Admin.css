@@ -1,0 +1,101 @@
+/* src/Admin.css */
+
+/* --- CRITICAL SCROLL FIX --- */
+/* Since body is locked by index.css, this wrapper must handle scrolling */
+.admin-page-wrapper {
+    height: 100vh;        /* Fill the viewport */
+    overflow-y: auto;     /* Allow vertical scrolling */
+    background: #f4f7f6;
+    width: 100%;
+}
+
+/* CONTAINER */
+.admin-container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 0 20px 50px 20px; /* Added bottom padding for scroll space */
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.admin-top-bar {
+    background: white;
+    padding: 15px 40px;
+    border-bottom: 1px solid #e1e5eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky; /* Keep navbar visible */
+    top: 0;
+    z-index: 100;
+}
+
+.admin-card {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-bottom: 30px;
+}
+
+/* TABS */
+.admin-tabs {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #e1e5eb;
+}
+
+.tab-btn {
+    padding: 10px 20px;
+    background: none;
+    border: none;
+    font-size: 16px;
+    font-weight: 600;
+    color: #7f8c8d;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: 0.2s;
+}
+
+.tab-btn:hover { color: #1e3c72; }
+.tab-btn.active { color: #1e3c72; border-bottom-color: #1e3c72; }
+
+/* USER TABLE */
+.admin-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+.admin-table th { text-align: left; padding: 12px; background: #f9f9f9; font-size: 12px; text-transform: uppercase; color: #7f8c8d; }
+.admin-table td { padding: 14px 12px; border-bottom: 1px solid #eee; font-size: 14px; vertical-align: middle; }
+
+/* ROLE GRID */
+.role-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
+.role-card { border: 1px solid #eee; border-radius: 8px; padding: 20px; background: #fff; border-top: 4px solid #ccc; position: relative; }
+.role-card.admin-role { border-top-color: #8e44ad; background: #fbf6fd; }
+
+.role-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #f0f0f0; }
+.role-name { font-weight: bold; font-size: 16px; text-transform: uppercase; }
+
+.perm-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 13px; }
+.perm-label { color: #555; font-weight: 500; }
+
+/* 3-STATE LEVEL SELECTOR */
+.level-select { display: flex; background: #f0f0f0; border-radius: 4px; padding: 2px; }
+.level-opt { padding: 4px 8px; font-size: 11px; cursor: pointer; border-radius: 3px; transition: 0.2s; color: #777; }
+.level-opt:hover { background: rgba(255,255,255,0.5); }
+.level-opt.active { background: white; color: #333; font-weight: bold; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.level-opt.active.edit { color: #27ae60; }
+.level-opt.active.view { color: #3498db; }
+
+/* CONTROLS */
+.btn-green { background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+.btn-red-outline { border: 1px solid #e74c3c; background: none; color: #e74c3c; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
+.btn-red-text { color: #e74c3c; font-weight: bold; cursor: pointer; background: none; border: none; font-size: 14px; }
+
+/* SWITCH TOGGLE */
+.switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 20px; }
+.slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+input:checked + .slider { background-color: #2196F3; }
+input:checked + .slider:before { transform: translateX(20px); }
+
+/* INPUTS */
+.admin-input { padding: 10px; border: 1px solid #ddd; border-radius: 6px; }

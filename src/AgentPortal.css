@@ -1,0 +1,74 @@
+/* src/AgentPortal.css */
+
+.agent-portal-wrapper {
+    height: 100vh;
+    width: 100%;
+    overflow-y: auto;
+    background: #f3e5f5; /* Purple tint background */
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.agent-portal-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 0 15px 50px 15px;
+}
+
+/* HEADER */
+.agent-portal-header {
+    background: #4a148c; /* Deep Purple */
+    padding: 15px 20px;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+/* ADMIN BAR */
+.ap-admin-toolbar {
+    background: #34495e;
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    border-bottom: 3px solid #8e44ad;
+}
+.ap-admin-badge { background: #e74c3c; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 10px; margin-right: 10px; }
+
+/* PROFILE */
+.ap-profile-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 5px solid #8e44ad;
+}
+.ap-user-name { font-size: 24px; font-weight: bold; color: #4a148c; margin-top: 5px; }
+
+/* CONTROLS */
+.ap-controls { display: flex; gap: 10px; margin-bottom: 20px; }
+.ap-chip { background: #fff; border: 1px solid #ddd; padding: 10px 20px; border-radius: 20px; font-size: 14px; font-weight: 600; color: #555; cursor: pointer; flex: 1; text-align: center; transition: 0.2s; }
+.ap-chip.active { background: #8e44ad; color: white; border-color: #8e44ad; box-shadow: 0 4px 6px rgba(142,68,173,0.3); }
+
+/* CARDS */
+.ap-comm-card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px; overflow: hidden; }
+.ap-comm-header { background: #f9f3fc; padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+.ap-comm-date { font-weight: bold; color: #6a1b9a; font-size: 13px; }
+.ap-comm-body { padding: 20px; }
+
+.ap-financials { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 15px; border-top: 1px dashed #eee; padding-top: 15px; }
+.ap-fin-val { font-size: 14px; color: #555; font-weight: 600; }
+.ap-final-amt { font-size: 24px; font-weight: bold; color: #8e44ad; }
+
+.ap-total-summary { background: #4a148c; color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: center; box-shadow: 0 4px 10px rgba(74,20,140,0.3); }
+.ap-total-val { font-size: 36px; font-weight: bold; margin-top: 5px; }
