@@ -22,6 +22,7 @@ const IPad = () => {
 
     // Timer Logic
     const [displayTime, setDisplayTime] = useState("00:00:00");
+    const [now, setNow] = useState(new Date()); // Tracks live time for worker rows
     
     // Forms
     const [leaderEditMode, setLeaderEditMode] = useState(false);
@@ -29,6 +30,9 @@ const IPad = () => {
     const [setupMode, setSetupMode] = useState('queue'); // 'queue' or 'manual'
     const [selectedQueueIdx, setSelectedQueueIdx] = useState('');
     
+    // Worker Edit State
+    const [editingWorker, setEditingWorker] = useState(null); // { id, h, m }
+
     // Manual Form State
     const [manualForm, setManualForm] = useState({
         company: '', project: '', category: '', size: '', h: 0, m: 0, s: 0
@@ -95,7 +99,6 @@ const IPad = () => {
         const wMap = {};
         wSnap.forEach(d => {
             const w = d.data();
-            // In Workers.jsx, the ID is the document ID (d.id), NOT a field inside the data
             const name = w.name || "Unknown Worker";
             wMap[d.id] = name; 
         });
@@ -107,13 +110,14 @@ const IPad = () => {
     // --- TIMER LOGIC ---
     useEffect(() => {
         const interval = setInterval(() => {
+            setNow(new Date()); // Update local 'now' for worker calculations
             if (!ipadData) return;
             
             let seconds = ipadData.secondsRemaining || 0;
             if (!ipadData.isPaused && ipadData.lastUpdateTime && (ipadData.activeWorkers || []).length > 0) {
-                const now = new Date();
+                const currentNow = new Date();
                 const last = new Date(ipadData.lastUpdateTime.seconds * 1000);
-                const elapsed = Math.floor((now - last) / 1000);
+                const elapsed = Math.floor((currentNow - last) / 1000);
                 const burned = elapsed * ipadData.activeWorkers.length;
                 seconds = seconds - burned;
             }
@@ -130,6 +134,73 @@ const IPad = () => {
         return () => clearInterval(interval);
     }, [ipadData]);
 
+    // --- WORKER TIME CALCULATIONS ---
+    const getWorkerTimeData = (wid) => {
+        if (!ipadData || !ipadData.scanHistory) return { totalMinutes: 0, currentMinutes: 0, bankedMinutes: 0 };
+        
+        let bankedSeconds = 0;
+        let lastClockIn = null;
+        
+        // Sort history safely
+        const history = [...ipadData.scanHistory].sort((a,b) => (a.timestamp?.seconds||0) - (b.timestamp?.seconds||0));
+
+        history.forEach(scan => {
+            if (scan.cardID !== wid) return;
+            if (scan.action.includes("In")) {
+                lastClockIn = scan.timestamp?.seconds;
+            } else if (scan.action.includes("Out") && lastClockIn) {
+                bankedSeconds += (scan.timestamp.seconds - lastClockIn);
+                lastClockIn = null;
+            }
+        });
+
+        let currentSeconds = 0;
+        // If currently active, add time since last Clock In
+        if (lastClockIn && ipadData.activeWorkers && ipadData.activeWorkers.includes(wid)) {
+            currentSeconds = Math.max(0, (now.getTime()/1000) - lastClockIn);
+        }
+
+        const totalMinutes = (bankedSeconds + currentSeconds) / 60;
+        return {
+            totalMinutes: totalMinutes,
+            currentMinutes: currentSeconds / 60,
+            bankedMinutes: bankedSeconds / 60
+        };
+    };
+
+    const formatWorkerTime = (minutes) => {
+        const h = Math.floor(minutes / 60);
+        const m = Math.floor(minutes % 60);
+        return `${h}h ${String(m).padStart(2, '0')}m`;
+    };
+
+    const startEditingWorker = (wid) => {
+        const data = getWorkerTimeData(wid);
+        const h = Math.floor(data.totalMinutes / 60);
+        const m = Math.floor(data.totalMinutes % 60);
+        setEditingWorker({ id: wid, h, m });
+    };
+
+    const saveWorkerTime = async () => {
+        if (!editingWorker) return;
+        const wid = editingWorker.id;
+        
+        // 1. Calculate desired Total
+        const targetTotalMinutes = (parseInt(editingWorker.h)||0) * 60 + (parseInt(editingWorker.m)||0);
+        
+        // 2. Get current active session duration to subtract it
+        const data = getWorkerTimeData(wid);
+        const newBankedMinutes = targetTotalMinutes - data.currentMinutes;
+
+        if (window.confirm(`Update hours to ${editingWorker.h}h ${editingWorker.m}m? \n\n⚠️ This will disqualify the project bonus.`)) {
+            await updateDoc(doc(db, "ipads", id), {
+                remoteCommand: `EDIT_WORKER|${wid}|${newBankedMinutes}`,
+                commandTimestamp: serverTimestamp()
+            });
+            setEditingWorker(null);
+        }
+    };
+
     // --- ACTIONS ---
 
     const sendCommand = async (action) => {
@@ -143,28 +214,7 @@ const IPad = () => {
         if (action === 'FINISH') {
             if (!window.confirm("Are you sure you want to FINISH this project?")) return;
             try {
-                // Calculate final seconds locally
-                let finalSeconds = ipadData.secondsRemaining;
-                if (!isPaused && ipadData.lastUpdateTime && activeWorkers.length > 0) {
-                    const elapsed = Math.floor((Date.now() - (ipadData.lastUpdateTime.seconds*1000)) / 1000);
-                    finalSeconds = finalSeconds - (elapsed * activeWorkers.length);
-                }
-
-                const report = {
-                    company: ipadData.companyName || "Unknown",
-                    project: ipadData.projectName || "Unknown",
-                    leader: ipadData.lineLeaderName || "Unknown",
-                    category: ipadData.category || "",
-                    size: ipadData.projectSize || "",
-                    originalSeconds: ipadData.originalSeconds || 0,
-                    finalSeconds: finalSeconds,
-                    workerCountAtFinish: activeWorkers.length,
-                    completedAt: serverTimestamp(),
-                    ipadId: id,
-                    financeStatus: "pending_production"
-                };
-
-                await addDoc(collection(db, "reports"), report);
+                // Dashboard no longer writes the report. iPad handles it.
             } catch(e) { 
                 console.error(e); 
                 alert("Error saving report."); 
@@ -262,8 +312,8 @@ const IPad = () => {
 
     if (loading) return <div style={{padding:'50px', textAlign:'center'}}>Loading Controller...</div>;
 
-    const isActive = (ipadData?.secondsRemaining || 0) > 0;
-    const activeWorkers = ipadData?.activeWorkers || [];
+const isActive = !!ipadData?.projectName && ipadData?.projectName !== "No Project Loaded";
+const activeWorkers = ipadData?.activeWorkers || [];
 
     return (
         <div className="ipc-wrapper">
@@ -318,12 +368,54 @@ const IPad = () => {
                             <div className="ipc-timer-display">{displayTime}</div>
 
                             <div className={`ipc-control-grid ${!perms.timer ? 'disabled-overlay' : ''}`}>
+                                {/* ROW 1: Standard Controls */}
                                 <button className={`ipc-ctrl-btn ${ipadData.isPaused ? 'btn-paused' : 'btn-run'}`} onClick={() => sendCommand('TOGGLE')}>
-                                    {ipadData.isPaused ? 'START' : 'PAUSE'}
+                                    {ipadData.isPaused ? 'RESUME' : 'PAUSE'}
                                 </button>
                                 <button className="ipc-ctrl-btn btn-lunch" onClick={() => sendCommand('LUNCH')}>LUNCH</button>
-                                <button className="ipc-ctrl-btn btn-save" onClick={() => sendCommand('SAVE')}>SAVE FOR LATER</button>
+                                <button className="ipc-ctrl-btn btn-save" onClick={() => sendCommand('SAVE')}>SAVE</button>
                                 <button className="ipc-ctrl-btn btn-reset" onClick={() => sendCommand('RESET')}>RESET</button>
+
+                                {/* ROW 2: PROCEDURES */}
+                                <button 
+                                    className="ipc-ctrl-btn" 
+                                    style={{background:'#8e44ad', color:'white', fontSize:'11px', fontWeight:'bold'}}
+                                    onClick={() => {
+                                        if(window.confirm("QC PAUSE (CREW)?\n\n⚠️ This will CANCEL the bonus.")) sendCommand('QC_PAUSE_CREW');
+                                    }}
+                                >
+                                    QC: CREW
+                                </button>
+
+                                <button 
+                                    className="ipc-ctrl-btn" 
+                                    style={{background:'#9b59b6', color:'white', fontSize:'11px', fontWeight:'bold'}}
+                                    onClick={() => sendCommand('QC_PAUSE_COMP')}
+                                >
+                                    QC: COMP
+                                </button>
+
+                                <button 
+                                    className="ipc-ctrl-btn" 
+                                    style={{background:'#f39c12', color:'white', fontSize:'11px', fontWeight:'bold'}}
+                                    onClick={() => sendCommand('TECH_PAUSE')}
+                                >
+                                    TECH ISSUE
+                                </button>
+
+                                <button 
+                                    className="ipc-ctrl-btn" 
+                                    style={{background:'#e74c3c', color:'white', fontSize:'11px', fontWeight:'bold'}} 
+                                    onClick={() => {
+                                        if(window.confirm("Are you sure you want to DISQUALIFY this project from the bonus?")) {
+                                            sendCommand('CANCEL_BONUS');
+                                        }
+                                    }}
+                                >
+                                    NO BONUS
+                                </button>
+
+                                {/* ROW 3: Finish */}
                                 <button className="ipc-ctrl-btn btn-finish" style={{gridColumn:'span 2'}} onClick={() => sendCommand('FINISH')}>FINISH</button>
                             </div>
                         </div>
@@ -334,21 +426,47 @@ const IPad = () => {
                             </div>
                             <table className="ipc-table">
                                 <thead>
-                                    <tr><th>Name</th><th>Card ID</th><th style={{textAlign:'right'}}>Action</th></tr>
+                                    <tr><th>Name</th><th>Logged Time</th><th style={{textAlign:'right'}}>Action</th></tr>
                                 </thead>
                                 <tbody>
                                     {activeWorkers.length === 0 ? (
                                         <tr><td colSpan="3" style={{textAlign:'center', color:'#999'}}>None</td></tr>
                                     ) : (
-                                        activeWorkers.map(wid => (
-                                            <tr key={wid}>
-                                                <td>{workersMap[wid] || wid}</td>
-                                                <td style={{fontFamily:'monospace'}}>{wid}</td>
-                                                <td style={{textAlign:'right'}}>
-                                                    <button className="btn-small-red" onClick={() => handleClockOut(wid)}>Clock Out</button>
-                                                </td>
-                                            </tr>
-                                        ))
+                                        activeWorkers.map(wid => {
+                                            const timeData = getWorkerTimeData(wid);
+                                            const isEditing = editingWorker && editingWorker.id === wid;
+                                            return (
+                                                <tr key={wid}>
+                                                    <td>
+                                                        <div style={{fontWeight:'bold'}}>{workersMap[wid] || wid}</div>
+                                                        <div style={{fontSize:'11px', color:'#7f8c8d'}}>{wid}</div>
+                                                    </td>
+                                                    <td style={{fontWeight:'bold', color:'#2c3e50'}}>
+                                                        {isEditing ? (
+                                                            <div style={{display:'flex', alignItems:'center', gap:'5px'}}>
+                                                                <input type="number" value={editingWorker.h} onChange={e=>setEditingWorker({...editingWorker, h:e.target.value})} style={{width:'40px', padding:'4px', borderRadius:'4px', border:'1px solid #ccc'}} /> h
+                                                                <input type="number" value={editingWorker.m} onChange={e=>setEditingWorker({...editingWorker, m:e.target.value})} style={{width:'40px', padding:'4px', borderRadius:'4px', border:'1px solid #ccc'}} /> m
+                                                            </div>
+                                                        ) : (
+                                                            formatWorkerTime(timeData.totalMinutes)
+                                                        )}
+                                                    </td>
+                                                    <td style={{textAlign:'right'}}>
+                                                        {isEditing ? (
+                                                            <div style={{display:'flex', justifyContent:'flex-end', gap:'5px'}}>
+                                                                <button className="ipc-btn-small-green" onClick={saveWorkerTime} style={{background:'#27ae60', color:'white', border:'none', padding:'4px 8px', borderRadius:'4px', cursor:'pointer'}}>Save</button>
+                                                                <button style={{background:'#e74c3c', color:'white', border:'none', padding:'4px 8px', borderRadius:'4px', cursor:'pointer'}} onClick={()=>setEditingWorker(null)}>X</button>
+                                                            </div>
+                                                        ) : (
+                                                            <div style={{display:'flex', justifyContent:'flex-end', gap:'8px'}}>
+                                                                <button className="btn-small-blue" onClick={() => startEditingWorker(wid)} style={{background:'#3498db', color:'white', border:'none', padding:'4px 8px', borderRadius:'4px', cursor:'pointer'}}>Edit</button>
+                                                                <button className="btn-small-red" onClick={() => handleClockOut(wid)} style={{background:'#e74c3c', color:'white', border:'none', padding:'4px 8px', borderRadius:'4px', cursor:'pointer'}}>Out</button>
+                                                            </div>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
                                     )}
                                 </tbody>
                             </table>

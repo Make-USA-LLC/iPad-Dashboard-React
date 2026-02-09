@@ -166,8 +166,15 @@ const ProjectSearch = () => {
                     }
                 });
             });
-            setAllColumns(Array.from(keys));
             
+            // Sort Columns: Source -> Alphabetical
+            const sortedCols = Array.from(keys).sort((a, b) => {
+                if (a === 'Source') return -1;
+                if (b === 'Source') return 1;
+                return a.localeCompare(b);
+            });
+
+            setAllColumns(sortedCols);
             setCombinedData(combined);
             setFilteredData(combined); // Initial state
             
@@ -179,6 +186,19 @@ const ProjectSearch = () => {
     };
 
     // --- HELPERS ---
+    
+    // Check if column is numeric to force Right Alignment
+    const isNumericCol = (key) => {
+        const k = key.toLowerCase();
+        return (
+            k.includes('price') || k.includes('cost') || k.includes('$') || 
+            k.includes('inv') || k.includes('profit') || k.includes('hrs') || 
+            k.includes('sec/unit') || k.includes('commission') || 
+            k.includes('unit/sec') || k.includes('bonus') || 
+            k === 'units' || k === 'qty' || k === 'total units' || k.includes('amount')
+        );
+    };
+
     const flattenObject = (ob, prefix = '', result = null) => {
         result = result || {};
         for (const i in ob) {
@@ -218,9 +238,12 @@ const ProjectSearch = () => {
         if (val === undefined || val === null) return '';
         if (typeof val === 'number') {
             const k = key.toLowerCase();
-            if (k.includes('price') || k.includes('cost') || k.includes('$') || k.includes('inv') || k.includes('profit') || k.includes('hrs') || k.includes('sec/unit') || k.includes('commission')||k.includes('unit/sec') || k.includes('bonus')) {
-                return val.toFixed(2);
-            }
+            const needsDecimals = k.includes('price') || k.includes('cost') || k.includes('$') || 
+                                  k.includes('inv') || k.includes('profit') || k.includes('hrs') || 
+                                  k.includes('sec/unit') || k.includes('commission')||
+                                  k.includes('unit/sec') || k.includes('bonus');
+
+            if (needsDecimals) return val.toFixed(2);
         }
         return val;
     };
@@ -246,7 +269,7 @@ const ProjectSearch = () => {
 
         setFilteredData(result);
         setCurrentPage(1);
-        handleSort(sortCol, result, sortAsc); // Re-apply sort
+        handleSort(sortCol, result, sortAsc); 
     };
 
     const handleClear = () => {
@@ -338,6 +361,7 @@ const ProjectSearch = () => {
 
             <div className="ps-container">
                 <div className="ps-filter-card">
+                    {/* Inputs */}
                     <div className="ps-input-group" style={{flex:2}}>
                         <label className="ps-label">Search</label>
                         <input className="ps-input" value={searchText} onChange={e => setSearchText(e.target.value)} onKeyDown={e => e.key==='Enter' && handleSearch()} placeholder="Keyword..." />
@@ -357,25 +381,83 @@ const ProjectSearch = () => {
                         </div>
                     </div>
                     
-                    <button className="btn btn-search" onClick={handleSearch}>Search</button>
-                    <button className="btn btn-clear" onClick={handleClear}>Clear</button>
+                    {/* Grouped Actions for Alignment */}
+                    <div style={{display:'flex', alignItems:'flex-end', gap:'10px'}}>
+                        <button className="btn btn-search" onClick={handleSearch}>Search</button>
+                        <button className="btn btn-clear" onClick={handleClear}>Clear</button>
+                    </div>
                     
-                    <div style={{width:'1px', background:'#eee', height:'40px', margin:'0 10px'}}></div>
+                    {/* Divider */}
+                    <div style={{width:'1px', background:'#ddd', height:'32px', margin:'0 15px', alignSelf:'flex-end', marginBottom:'4px'}}></div>
                     
-                    <button className="btn btn-export" onClick={handleExport}>Export</button>
-                    
-                    <div style={{position:'relative'}}>
-                        <button className="btn btn-cols" onClick={() => setShowColMenu(!showColMenu)}>Columns</button>
-                        {showColMenu && (
-                            <div className="ps-col-dropdown">
-                                {allColumns.map(col => (
-                                    <div key={col} className="ps-col-option" onClick={() => toggleColumn(col)}>
-                                        <input type="checkbox" checked={visibleColumns.has(col)} readOnly />
-                                        <span>{col}</span>
+                    {/* Grouped Tools for Alignment */}
+                    <div style={{display:'flex', alignItems:'flex-end', gap:'10px'}}>
+                        <button className="btn btn-export" onClick={handleExport}>Export</button>
+                        
+                        <div style={{position:'relative'}}>
+                            <button className="btn btn-cols" onClick={() => setShowColMenu(!showColMenu)}>
+                                Columns {showColMenu ? '▲' : '▼'}
+                            </button>
+                            {showColMenu && (
+                                <div className="ps-col-dropdown" style={{
+                                    position: 'absolute', top: '45px', right: 0,
+                                    background: 'white', border: '1px solid #ccc',
+                                    borderRadius: '8px', padding: '15px', zIndex: 1000,
+                                    boxShadow: '0 4px 20px rgba(0,0,0,0.15)', width: '280px',
+                                    display: 'flex', flexDirection: 'column', textAlign:'left'
+                                }}>
+                                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'12px', paddingBottom:'8px', borderBottom:'1px solid #eee'}}>
+                                        <span style={{fontWeight:'bold', fontSize:'14px', color:'#2c3e50'}}>Select Columns</span>
+                                        <button onClick={() => setShowColMenu(false)} style={{border:'none', background:'none', cursor:'pointer', fontSize:'18px', color:'#999'}}>×</button>
                                     </div>
-                                ))}
-                            </div>
-                        )}
+                                    
+                                    <div style={{display:'flex', gap:'15px', marginBottom:'10px', fontSize:'12px', paddingLeft:'8px'}}>
+                                        <span onClick={() => setVisibleColumns(new Set(allColumns))} style={{color:'#3498db', cursor:'pointer', fontWeight:'bold'}}>All</span>
+                                        <span onClick={() => setVisibleColumns(new Set(DEFAULT_COLUMNS))} style={{color:'#3498db', cursor:'pointer'}}>Default</span>
+                                        <span onClick={() => setVisibleColumns(new Set(['Source']))} style={{color:'#e74c3c', cursor:'pointer'}}>None</span>
+                                    </div>
+
+                                    <div style={{maxHeight:'350px', overflowY:'auto', display:'flex', flexDirection:'column', gap:'2px'}}>
+                                        {allColumns.map(col => (
+                                            <label key={col} style={{
+                                                display:'flex', 
+                                                alignItems:'center', 
+                                                gap:'10px', 
+                                                padding:'6px 8px', 
+                                                cursor:'pointer', 
+                                                fontSize:'13px', 
+                                                userSelect:'none',
+                                                borderRadius:'4px',
+                                                transition:'background 0.2s'
+                                            }}
+                                            onMouseEnter={e => e.currentTarget.style.background = '#f5f5f5'}
+                                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                            >
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={visibleColumns.has(col)} 
+                                                    onChange={() => toggleColumn(col)}
+                                                    style={{
+                                                        margin:0, 
+                                                        cursor:'pointer', 
+                                                        width:'16px', 
+                                                        height:'16px', 
+                                                        accentColor:'#2c3e50',
+                                                        flexShrink: 0 
+                                                    }} 
+                                                />
+                                                <span style={{
+                                                    color: visibleColumns.has(col) ? '#2c3e50' : '#7f8c8d',
+                                                    whiteSpace:'nowrap', 
+                                                    overflow:'hidden', 
+                                                    textOverflow:'ellipsis'
+                                                }}>{col}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -394,7 +476,10 @@ const ProjectSearch = () => {
                                 <tr>
                                     {allColumns.map(col => (
                                         visibleColumns.has(col) && (
-                                            <th key={col} onClick={() => handleSort(col, undefined, !sortAsc)}>
+                                            <th key={col} 
+                                                onClick={() => handleSort(col, undefined, !sortAsc)}
+                                                style={{textAlign: isNumericCol(col) ? 'right' : 'left'}}
+                                            >
                                                 {col} {sortCol === col ? (sortAsc ? '↑' : '↓') : ''}
                                             </th>
                                         )
@@ -419,7 +504,7 @@ const ProjectSearch = () => {
                                                     );
                                                 }
                                                 return (
-                                                    <td key={col} style={{textAlign: typeof row[col]==='number' ? 'right' : 'left'}}>
+                                                    <td key={col} style={{textAlign: isNumericCol(col) || typeof row[col]==='number' ? 'right' : 'left'}}>
                                                         {formatValue(col, row[col])}
                                                     </td>
                                                 );

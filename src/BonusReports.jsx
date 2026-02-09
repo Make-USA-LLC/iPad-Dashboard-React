@@ -253,10 +253,20 @@ const BonusReports = () => {
                             </div>
 
                             <table className="slip-table">
-                                <thead><tr><th>Date</th><th>Project / Client</th><th>Role</th><th style={{textAlign:'right'}}>Hours</th><th style={{textAlign:'right'}}>Bonus</th></tr></thead>
+                                <thead>
+                                    <tr>
+                                        <th>Run Date</th>
+                                        <th>Pay Date</th>
+                                        <th>Project / Client</th>
+                                        <th>Role</th>
+                                        <th style={{textAlign:'right'}}>Hours</th>
+                                        <th style={{textAlign:'right'}}>Bonus</th>
+                                    </tr>
+                                </thead>
                                 <tbody>
                                     {emp.items.map((item, ix) => (
                                         <tr key={ix}>
+                                            <td>{item.originalDate}</td>
                                             <td>{item.payDate}</td>
                                             <td>
                                                 <div style={{fontWeight:'bold'}}>{item.project}</div>
