@@ -10,6 +10,7 @@ import BonusReports from './BonusReports';
 import EmployeePortal from './EmployeePortal';
 import Commisions from './Commisions';
 import AgentPortal from './AgentPortal';
+import AgentReports from './AgentReports';
 import Kiosk from './Kiosk';
 import Logout from './Logout';
 import ManualIngest from './manual_ingest';
@@ -115,6 +116,8 @@ function App() {
       <Route path="/AgentPortal" element={<AgentPortal />} />
 
       {/* --- PROTECTED DASHBOARD ROUTES --- */}
+
+      <Route path="/dashboard.html" element={<DashboardGuard><Dashboard /></DashboardGuard>} />
       <Route path="/admin" element={<DashboardGuard><Admin /></DashboardGuard>} />
       <Route path="/agent-management" element={<DashboardGuard><AgentManagement /></DashboardGuard>} />
       <Route path="/bonuses" element={<DashboardGuard><Bonuses /></DashboardGuard>} />
@@ -125,6 +128,7 @@ function App() {
       <Route path="/manual_ingest" element={<DashboardGuard><ManualIngest /></DashboardGuard>} />
       <Route path="/production-input" element={<DashboardGuard><ProductionInput /></DashboardGuard>} />
       <Route path="/ProjectOptions" element={<DashboardGuard><ProjectOptions /></DashboardGuard>} />
+<Route path="/Project-Options" element={<DashboardGuard><ProjectOptions /></DashboardGuard>} />
       <Route path="/finance-input" element={<DashboardGuard><FinanceInput /></DashboardGuard>} />
       <Route path="/financial-report" element={<DashboardGuard><FinancialReport /></DashboardGuard>} />
       <Route path="/FinancialReport" element={<DashboardGuard><FinancialReport /></DashboardGuard>} />
@@ -141,6 +145,8 @@ function App() {
       <Route path="/upcoming-projects" element={<DashboardGuard><UpcomingProjects /></DashboardGuard>} />
       <Route path="/UpcomingProjects" element={<DashboardGuard><UpcomingProjects /></DashboardGuard>} />
       <Route path="/workers" element={<DashboardGuard><Workers /></DashboardGuard>} />
+      <Route path="/AgentReports" element={<DashboardGuard><AgentReports /></DashboardGuard>} />
+      <Route path="/agent-reports" element={<DashboardGuard><AgentReports /></DashboardGuard>} />
 
       <Route path="/logout" element={<Logout />} />
       <Route path="*" element={<NotFound />} />

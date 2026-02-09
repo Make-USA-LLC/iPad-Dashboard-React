@@ -304,8 +304,8 @@ const Dashboard = () => {
                     {/* Commissions */}
                     {(hasPerm('commissions', 'view') || hasPerm('finance', 'view')) && (
                         <>
-                            <li className="nav-item" onClick={() => navigate('/commissions')}>
-                                <div className="nav-item-main"><span className="material-icons" style={{color:'#8e44ad'}}>pie_chart</span> Commissions</div>
+                            <li className="nav-item" onClick={() => navigate('/commisions')}>
+                                <div className="nav-item-main"><span className="material-icons" style={{color:'#8e44ad'}}>pie_chart</span> Commisions</div>
                             </li>
                             <li className="nav-item" onClick={() => navigate('/agent-reports')}>
                                 <div className="nav-item-main"><span className="material-icons" style={{color:'#e91e63'}}>summarize</span> Agent Reports</div>

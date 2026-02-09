@@ -1,0 +1,307 @@
+/* src/AgentReports.css */
+
+.ar-wrapper {
+    font-family: 'Segoe UI', sans-serif;
+    background: #f4f7f6;
+    min-height: 100vh;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+}
+
+/* SCREEN STYLES */
+.ar-top-bar {
+    background: white;
+    padding: 15px 40px;
+    border-bottom: 1px solid #e1e5eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.ar-container {
+    max-width: 1000px;
+    margin: 30px auto;
+    padding: 0 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.ar-control-panel {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.ar-control-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: flex-end;
+    justify-content: space-between;
+}
+
+.ar-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.ar-input-group label {
+    font-size: 11px;
+    font-weight: bold;
+    color: #777;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ar-select {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    min-width: 250px;
+    background: #fff;
+}
+
+.btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    transition: 0.2s;
+    white-space: nowrap;
+}
+
+.btn-print { background: #8e44ad; color: white; }
+.btn-print:hover { background: #732d91; }
+
+.btn-csv { background: #fff; border: 1px solid #ccc; color: #333; }
+.btn-csv:hover { background: #f9f9f9; }
+
+.btn-red-text {
+    color: #e74c3c;
+    font-weight: bold;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-size: 14px;
+}
+
+.btn-toggle {
+    background: #e0e0e0;
+    color: #555;
+    border: 1px solid #ccc;
+    padding: 10px 15px;
+}
+
+.btn-toggle.active {
+    background: #8e44ad;
+    color: white;
+    border-color: #732d91;
+}
+
+.ar-summary-card {
+    background: #2c3e50;
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* SLIP STYLES */
+.ar-slip-container {
+    display: grid;
+    gap: 30px;
+}
+
+.ar-pay-slip {
+    background: white;
+    border: 1px solid #eee;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* HEADER LAYOUT */
+.slip-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 40px;
+}
+
+.company-branding {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.company-logo {
+    height: 50px;
+    width: auto;
+    object-fit: contain;
+}
+
+.company-details {
+    font-size: 11px;
+    color: #555;
+    line-height: 1.4;
+}
+
+.period-box { text-align: right; }
+.period-label { font-size: 11px; color: #666; font-weight: bold; letter-spacing: 1px; }
+.period-date { font-weight: bold; font-family: monospace; font-size: 16px; margin-top: 4px; color: #8e44ad; }
+
+.emp-section {
+    border-bottom: 2px solid #8e44ad;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.emp-name {
+    font-size: 28px;
+    font-weight: 800;
+    color: #2c3e50;
+    text-transform: uppercase;
+    letter-spacing: -0.5px;
+}
+
+/* TABLE STYLES */
+.ar-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-bottom: 20px;
+}
+
+.ar-table th {
+    text-align: left;
+    border-bottom: 2px solid #333;
+    padding: 8px 4px;
+    text-transform: uppercase;
+    font-size: 11px;
+    font-weight: bold;
+    color: #333;
+}
+
+.ar-table td {
+    padding: 12px 4px;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+}
+
+.rate-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    background: #f3e5f5;
+    border-radius: 4px;
+    font-weight: bold;
+    color: #8e44ad;
+}
+
+.excluded-text {
+    font-size: 10px;
+    color: #e74c3c;
+    display: block;
+    margin-top: 2px;
+}
+
+.total-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 2px solid #333;
+}
+
+.total-box { text-align: right; }
+
+.cut-line {
+    display: none;
+    margin-top: 60px;
+    border-top: 1px dashed #999;
+    position: relative;
+    width: 100%;
+    height: 10px;
+}
+
+.cut-line::after {
+    content: "Authorized Signature: _______________________";
+    position: absolute;
+    right: 0;
+    top: -25px;
+    font-size: 12px;
+    background: white;
+    padding-left: 10px;
+    color: #333;
+}
+
+.ar-empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+}
+
+/* PRINT MEDIA QUERY */
+@media print {
+    @page { size: auto; margin: 0mm; }
+    
+    body { background: white; font-size: 12pt; color: black; margin: 0; padding: 0; }
+    
+    .ar-top-bar, .ar-control-panel, .ar-summary-card, .btn, .ar-wrapper { 
+        display: block !important; 
+        background: white !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    /* Hide UI elements */
+    .ar-top-bar, .ar-control-panel, .ar-summary-card { display: none !important; }
+    
+    .ar-container { max-width: 100%; margin: 0; padding: 0; }
+    .ar-slip-container { display: block; }
+    
+    .ar-pay-slip { 
+        border: none; 
+        box-shadow: none; 
+        border-radius: 0;
+        margin: 0;
+        width: 100vw;
+        height: 100vh;
+        padding: 40px;
+        page-break-after: always;
+        break-after: page;
+        position: relative;
+    }
+    
+    .ar-pay-slip:last-child { page-break-after: auto; }
+    
+    .cut-line { 
+        display: block; 
+        position: absolute; 
+        bottom: 50px; 
+        width: calc(100% - 80px); 
+    }
+}

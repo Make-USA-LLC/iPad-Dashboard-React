@@ -22,15 +22,31 @@ const FIELD_MAPPINGS = {
     'Agent': ['agent', 'sales rep','agentname'],
     'Type': ['type', 'category', 'project type'],
     'Bonus': ['bonus', 'bonus amount'],
-    'Recommended price/unit': ['recommended price/unit', 'price/unit', 'unit price', 'recommendedprice']
+    
+    // 1. TARGET PRICE (Input from Queue/Excel)
+    'Target Price': [
+        'original quote', 'quote', 'target price', 'targetprice',
+        'priceperunit', 'price per unit', 'price/unit', 
+        'quotedprice', 'quoted price'
+    ],
+    
+    // 2. REALIZED PRICE (Calculated from Invoice)
+    'Realized Price': [
+        'recommended price/unit', 'recommendedprice', 
+        'calc price', 'unit price', 'calc. price/unit'
+    ],
+    
+    'Expected Units': ['expectedunits', 'expected units', 'targetunits', 'quotedunits']
 };
 
 const DEFAULT_COLUMNS = [
     'Line Leader', 'Date', 'CUSTOMER', 'PL#', 'Desc', 
+    'Target Price', // <--- Forced here
+    'Expected Units',
     'Labor HRS', 'Cost', 'Inv $', 'Units', 
     'Unit/Sec', 'Commission', 'Agent', 
     'Profit/ loss', 'Sec/Unit', 'Type', 
-    'Recommended price/unit'
+    'Realized Price' 
 ];
 
 const ProjectSearch = () => {
@@ -43,6 +59,8 @@ const ProjectSearch = () => {
     const [filteredData, setFilteredData] = useState([]);
     const [categories, setCategories] = useState([]);
     const [allColumns, setAllColumns] = useState([]);
+    
+    // Initialize visible columns
     const [visibleColumns, setVisibleColumns] = useState(new Set([...DEFAULT_COLUMNS, 'Source']));
 
     // Filters
@@ -71,6 +89,16 @@ const ProjectSearch = () => {
             }
         });
         return () => unsubscribe();
+    }, []);
+
+    // FORCE COLUMN UPDATE (Fixes browser holding onto old column list)
+    useEffect(() => {
+        setVisibleColumns(prev => {
+            const next = new Set(prev);
+            // Ensure every default column is definitely selected
+            DEFAULT_COLUMNS.forEach(col => next.add(col));
+            return next;
+        });
     }, []);
 
     const checkAccess = async (user) => {
@@ -132,6 +160,9 @@ const ProjectSearch = () => {
                     const secPerUnit = (units > 0 && secondsWorked > 0) ? (secondsWorked / units) : 0;
                     const unitPerSec = (secondsWorked > 0) ? (units / secondsWorked) : 0;
 
+                    // Calculate Finance Price per Unit for the "Calc" column
+                    const calculatedPricePerUnit = (units > 0) ? ((data.invoiceAmount || 0) / units) : 0;
+
                     const enriched = {
                         ...data,
                         'Date': data.completedAt ? new Date(data.completedAt.seconds*1000).toLocaleDateString() : '-',
@@ -143,7 +174,14 @@ const ProjectSearch = () => {
                         'Desc': data.project,
                         'Line Leader': data.leader, 
                         'PL#': data.jobId,
-                        'Type': data.jobName || data.category || ''
+                        'Type': data.jobName || data.category || '',
+                        
+                        // 1. Realized (Calculated) Price
+                        'Realized Price': calculatedPricePerUnit,
+
+                        // 2. Target Price (Input from Queue)
+                        'Target Price': data.pricePerUnit || 0,
+                        'Expected Units': data.expectedUnits || 0
                     };
                     
                     let flat = flattenObject(enriched);
@@ -156,21 +194,38 @@ const ProjectSearch = () => {
             
             // Extract Columns
             const keys = new Set(['Source']);
+            
+            // Explicitly add Default Columns FIRST
             DEFAULT_COLUMNS.forEach(c => keys.add(c));
+            
             combined.slice(0, 100).forEach(row => {
                 Object.keys(row).forEach(k => {
+                    if (keys.has(k)) return; // Already added
+
                     const kLow = k.toLowerCase();
-                    const restricted = ['inv', 'cost', 'profit', 'bonus', 'commission', 'price', '$'];
-                    if(!k.startsWith('_') && !restricted.some(r => kLow.includes(r))) {
+                    
+                    // RELAXED FILTER: I removed 'price' from restricted list to ensure Target Price shows
+                    const restricted = ['inv', 'cost', 'profit', 'bonus', 'commission', '$'];
+                    const isRestricted = restricted.some(r => kLow.includes(r));
+                    
+                    if (!k.startsWith('_') && !isRestricted) {
                         keys.add(k);
                     }
                 });
             });
             
-            // Sort Columns: Source -> Alphabetical
+            // Sort Columns
             const sortedCols = Array.from(keys).sort((a, b) => {
                 if (a === 'Source') return -1;
                 if (b === 'Source') return 1;
+                
+                // Prioritize Defaults
+                const idxA = DEFAULT_COLUMNS.indexOf(a);
+                const idxB = DEFAULT_COLUMNS.indexOf(b);
+                if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+                if (idxA !== -1) return -1;
+                if (idxB !== -1) return 1;
+
                 return a.localeCompare(b);
             });
 
@@ -195,7 +250,8 @@ const ProjectSearch = () => {
             k.includes('inv') || k.includes('profit') || k.includes('hrs') || 
             k.includes('sec/unit') || k.includes('commission') || 
             k.includes('unit/sec') || k.includes('bonus') || 
-            k === 'units' || k === 'qty' || k === 'total units' || k.includes('amount')
+            k === 'units' || k === 'qty' || k === 'total units' || k.includes('amount') ||
+            k.includes('expected units') || k.includes('quote')
         );
     };
 
@@ -241,7 +297,8 @@ const ProjectSearch = () => {
             const needsDecimals = k.includes('price') || k.includes('cost') || k.includes('$') || 
                                   k.includes('inv') || k.includes('profit') || k.includes('hrs') || 
                                   k.includes('sec/unit') || k.includes('commission')||
-                                  k.includes('unit/sec') || k.includes('bonus');
+                                  k.includes('unit/sec') || k.includes('bonus') ||
+                                  k.includes('quote');
 
             if (needsDecimals) return val.toFixed(2);
         }

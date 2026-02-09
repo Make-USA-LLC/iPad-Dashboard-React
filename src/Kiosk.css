@@ -55,7 +55,7 @@
     font-size: 32px; 
     font-weight: bold; 
 }
-
+.k-timer-negative { color: #e74c3c; }
 .k-timer-paused { color: #f1c40f; }
 .k-timer-idle { color: #7f8c8d; }
 

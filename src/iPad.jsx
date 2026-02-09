@@ -274,7 +274,10 @@ const IPad = () => {
             remoteCommand: `PRELOAD|0:0:${timeRemaining}`,
             commandTimestamp: serverTimestamp(),
             scanHistory: job.scanHistory || [],
-            projectEvents: job.projectEvents || []
+            projectEvents: job.projectEvents || [],
+            // Pass pricing info to iPad for reporting
+            pricePerUnit: job.pricePerUnit || 0,
+            expectedUnits: job.expectedUnits || 0
         };
 
         await updateDoc(doc(db, "ipads", id), payload);
@@ -300,7 +303,9 @@ const IPad = () => {
             remoteCommand: `PRELOAD|${h}:${m}:${s}`,
             commandTimestamp: serverTimestamp(),
             scanHistory: [],
-            projectEvents: []
+            projectEvents: [],
+            pricePerUnit: 0,
+            expectedUnits: 0
         };
 
         await updateDoc(doc(db, "ipads", id), payload);

@@ -22,7 +22,6 @@ const Kiosk = () => {
 
         signInWithEmailAndPassword(auth, kioskEmail, kioskPass)
             .then(() => {
-                // Login Success -> Start Listening
                 const unsubscribe = onSnapshot(collection(db, "ipads"), (snapshot) => {
                     let list = [];
                     snapshot.forEach(doc => {
@@ -49,19 +48,18 @@ const Kiosk = () => {
             .catch((err) => {
                 console.error("Kiosk Login Error:", err);
                 setError("Login Failed: " + err.message);
-                // Auto-refresh in 10s if login fails (network blip)
                 setTimeout(() => window.location.reload(), 10000);
             });
     }, []);
 
-    // 2. Timer Tick (Updates every second)
+    // 2. Timer Tick
     useEffect(() => {
         const interval = setInterval(() => setNow(Date.now()), 1000);
         return () => clearInterval(interval);
     }, []);
 
-    // 3. Render Helper
-    const renderTimer = (ipad) => {
+    // Helper: Calculates the raw seconds (Math only)
+    const calculateSeconds = (ipad) => {
         let seconds = ipad.secondsRemaining || 0;
         
         // Calculate burn if live
@@ -70,7 +68,11 @@ const Kiosk = () => {
             const elapsed = Math.floor((now - lastUpdate) / 1000);
             seconds = seconds - (elapsed * ipad.activeWorkers.length);
         }
+        return seconds;
+    };
 
+    // Helper: Formats the seconds into HH:MM:SS string
+    const formatTime = (seconds) => {
         const isNeg = seconds < 0;
         const absSec = Math.abs(seconds);
         const h = Math.floor(absSec / 3600);
@@ -88,6 +90,11 @@ const Kiosk = () => {
         <div className="kiosk-wrapper">
             <div className="kiosk-grid">
                 {ipads.map(ipad => {
+                    // 1. Calculate value first
+                    const currentSeconds = calculateSeconds(ipad);
+                    const isNegative = currentSeconds < 0;
+
+                    // 2. Determine State
                     const isActive = ipad.secondsRemaining !== 0;
                     const isPaused = ipad.isPaused === true;
                     
@@ -103,7 +110,8 @@ const Kiosk = () => {
                         } else {
                             statusText = 'RUNNING';
                             statusClass = 'k-st-active';
-                            timerClass = ''; // Default Green
+                            // Logic: If negative, turn Red. Else, stay Green (default).
+                            timerClass = isNegative ? 'k-timer-negative' : ''; 
                         }
                     }
 
@@ -120,7 +128,7 @@ const Kiosk = () => {
                                 </div>
                             </div>
                             <div className={`k-card-timer ${timerClass}`}>
-                                {renderTimer(ipad)}
+                                {formatTime(currentSeconds)}
                             </div>
                         </div>
                     );

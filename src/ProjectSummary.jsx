@@ -16,11 +16,19 @@ const FIELD_MAPPINGS = {
     'Unit/Sec': ['unit/sec', 'units per sec'],
     'Sec/Unit': ['sec/unit', 'efficiency', 'seconds per unit'],
     'Agent': ['agent', 'sales rep','agentname'],
-    'Type': ['type', 'category', 'project type']
+    'Type': ['type', 'category', 'project type'],
+    
+    // NEW MAPPING
+    'Target Price': [
+        'priceperunit', 'price per unit', 'price/unit', 
+        'target price', 'targetprice', 
+        'quotedprice', 'quoted price', 'original quote'
+    ]
 };
 
 const DEFAULT_COLUMNS = [
     'Line Leader', 'Date', 'CUSTOMER', 'PL#', 'Desc', 
+    'Target Price', // <--- Added here
     'Labor HRS', 'Units', 'Unit/Sec', 'Sec/Unit', 'Type', 'Agent'
 ];
 
@@ -34,6 +42,8 @@ const ProjectSummary = () => {
     const [filteredData, setFilteredData] = useState([]);
     const [categories, setCategories] = useState([]);
     const [allColumns, setAllColumns] = useState([]);
+    
+    // Initialize visible columns
     const [visibleColumns, setVisibleColumns] = useState(new Set([...DEFAULT_COLUMNS, 'Source']));
 
     // Filters
@@ -62,6 +72,15 @@ const ProjectSummary = () => {
             }
         });
         return () => unsubscribe();
+    }, []);
+
+    // FORCE COLUMN RESET (Fixes browser cache issues)
+    useEffect(() => {
+        setVisibleColumns(prev => {
+            const next = new Set(prev);
+            DEFAULT_COLUMNS.forEach(col => next.add(col));
+            return next;
+        });
     }, []);
 
     const checkAccess = async (user) => {
@@ -134,7 +153,8 @@ const ProjectSummary = () => {
                         'Line Leader': data.leader, 
                         'PL#': data.jobId,
                         'Type': data.jobName || data.category || '',
-                        'Agent': data.agentName
+                        'Agent': data.agentName,
+                        'Target Price': data.pricePerUnit || 0 // <--- Mapped here
                     };
                     
                     let flat = flattenObject(enriched);
@@ -147,22 +167,40 @@ const ProjectSummary = () => {
             
             // Extract Columns (Exclude Financials)
             const keys = new Set(['Source']);
+            
+            // Explicitly add Defaults FIRST
             DEFAULT_COLUMNS.forEach(c => keys.add(c));
             
             combined.slice(0, 100).forEach(row => {
                 Object.keys(row).forEach(k => {
+                    if (keys.has(k)) return;
+
                     const kLow = k.toLowerCase();
                     const restricted = ['inv', 'cost', 'profit', 'bonus', 'commission', 'price', '$'];
+                    
+                    // Allow "Target Price" specifically, block other prices
+                    if (k === 'Target Price') {
+                        keys.add(k);
+                        return;
+                    }
+
                     if(!k.startsWith('_') && k !== 'id' && !restricted.some(r => kLow.includes(r))) {
                         keys.add(k);
                     }
                 });
             });
 
-            // Sort Columns: Source -> Alphabetical
+            // Sort Columns: Source -> Defaults -> Alphabetical
             const sortedCols = Array.from(keys).sort((a, b) => {
                 if (a === 'Source') return -1;
                 if (b === 'Source') return 1;
+                
+                const idxA = DEFAULT_COLUMNS.indexOf(a);
+                const idxB = DEFAULT_COLUMNS.indexOf(b);
+                if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+                if (idxA !== -1) return -1;
+                if (idxB !== -1) return 1;
+
                 return a.localeCompare(b);
             });
 
@@ -186,7 +224,8 @@ const ProjectSummary = () => {
             k.includes('inv') || k.includes('profit') || k.includes('hrs') || 
             k.includes('sec/unit') || k.includes('commission') || 
             k.includes('unit/sec') || k.includes('bonus') || 
-            k === 'units' || k === 'qty' || k === 'total units' || k.includes('amount')
+            k === 'units' || k === 'qty' || k === 'total units' || k.includes('amount') ||
+            k === 'Target Price'
         );
     };
 
@@ -229,7 +268,7 @@ const ProjectSummary = () => {
         if (val === undefined || val === null) return '';
         if (typeof val === 'number') {
             const k = key.toLowerCase();
-            if (k.includes('hours') || k.includes('hrs') || k.includes('unit') || k.includes('sec')) {
+            if (k.includes('hours') || k.includes('hrs') || k.includes('unit') || k.includes('sec') || k.includes('price')) {
                 return val.toFixed(2);
             }
         }
