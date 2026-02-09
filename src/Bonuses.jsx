@@ -1,17 +1,184 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Bonuses.css';
-import { calculateBonuses, sanitize } from './calculations/bonuses';
+// We are defining the calculation logic internally to match the HTML exactly
+// instead of importing it, to ensure the math is identical.
 import { db, auth, loadUserData } from './firebase_config.jsx';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
+
+// --- INTERNAL CALCULATION LOGIC (Matches HTML) ---
+const sanitize = (str) => (str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+const calculateBonusesInternal = (report, globalConfig) => {
+    // 1. Setup Config
+    const usedConfig = report.historicalConfig || globalConfig;
+    const COST_PER_HR = parseFloat(usedConfig.costPerHour) || 0;
+
+    // 2. Calculate Profit
+    // Check if we use 'minutes' (from workerLog) or 'seconds' (legacy)
+    let totalHours = 0;
+    if (report.workerLog) {
+         // Sum minutes from log
+         const totalMin = report.workerLog.reduce((acc, w) => acc + (w.minutes || 0), 0);
+         totalHours = totalMin / 60;
+    } else {
+         // Fallback to start/end seconds
+         const sec = (report.originalSeconds || 0) - (report.finalSeconds || 0);
+         totalHours = sec > 0 ? sec / 3600 : 0;
+    }
+
+    const laborCost = totalHours * COST_PER_HR;
+
+    // Agent Commission
+    let comm = 0;
+    if (report.agentName && usedConfig.agents) {
+        const ag = usedConfig.agents.find(a => a.name === report.agentName);
+        if (ag) {
+            const excluded = report.commissionExcluded || 0;
+            const basis = Math.max(0, (report.invoiceAmount || 0) - excluded);
+            comm = basis * (parseFloat(ag.comm) / 100);
+        }
+    }
+
+    const profit = (report.invoiceAmount || 0) - laborCost - comm;
+
+    // 3. Process Workers & Leader
+    const log = report.workerLog || [];
+    const safeLeader = sanitize(report.leader);
+    
+    let workersOnly = [];
+    let leaderMin = 0;
+    let maxWorkerMin = 0;
+    let allWorkersMap = {}; // To store final results
+
+    // If using the older 'workers' object/array format, convert to standardized array
+    let standardizedLog = log;
+    if (log.length === 0 && report.workers) {
+        // Handle legacy array or object
+        if (Array.isArray(report.workers)) standardizedLog = report.workers;
+        else standardizedLog = Object.entries(report.workers).map(([k, v]) => ({ name: k, ...v }));
+    }
+
+    standardizedLog.forEach(w => {
+        // Normalize time to minutes
+        let minutes = w.minutes || 0;
+        if (!w.minutes && w.seconds) minutes = w.seconds / 60;
+
+        if (minutes > maxWorkerMin) maxWorkerMin = minutes;
+
+        // Check if this person is the leader
+        if (sanitize(w.name) === safeLeader && safeLeader.length > 0) {
+            leaderMin = minutes;
+        } else {
+            workersOnly.push({ ...w, minutes });
+        }
+    });
+
+    // Fallback if leader wasn't in the log but is assigned
+    if (report.leader && leaderMin === 0 && totalHours > 0) {
+        leaderMin = totalHours * 60;
+    }
+
+    // 4. Calculate Pools
+    let leaderPool = 0;
+    let workerPool = 0;
+    
+    // Get Method
+    const method = report.bonusCalcMethod?.type || 'standard_percent';
+    const params = report.bonusCalcMethod || {};
+
+    if (method === 'standard_percent') {
+        leaderPool = Math.max(0, profit * ((usedConfig.leaderPoolPercent || 0) / 100));
+        workerPool = Math.max(0, profit * ((usedConfig.workerPoolPercent || 0) / 100));
+    } 
+    else if (method === 'leader_percent') {
+        leaderPool = Math.max(0, profit * ((params.l_pct || 0) / 100));
+        workerPool = 0;
+    }
+    else if (method === 'custom_percent') {
+        leaderPool = Math.max(0, profit * ((params.l_pct || 0) / 100));
+        workerPool = Math.max(0, profit * ((params.w_pct || 0) / 100));
+    }
+    else if (method === 'fixed_amount') {
+        leaderPool = parseFloat(params.l_fix) || 0;
+        workerPool = parseFloat(params.w_fix) || 0;
+    }
+    else if (method === 'legacy_interval') {
+        const lAmt = parseFloat(params.l_amt)||0; const lThr = parseFloat(params.l_thr)||1000;
+        const wAmt = parseFloat(params.w_amt)||0; const wThr = parseFloat(params.w_thr)||1000;
+        leaderPool = (lThr>0 && profit>0) ? Math.floor(profit/lThr)*lAmt : 0;
+        workerPool = (wThr>0 && profit>0) ? Math.floor(profit/wThr)*wAmt*workersOnly.length : 0;
+    }
+
+    // 5. Leader Adjustment Rule (The "30 Minute Rule" from HTML)
+    if (method !== 'leader_percent' && leaderMin > 0 && maxWorkerMin > 0) {
+        const diff = maxWorkerMin - leaderMin;
+        if (diff > 30) {
+            const ratio = leaderMin / maxWorkerMin;
+            const amountToMove = leaderPool * (1 - ratio);
+            leaderPool -= amountToMove;
+            workerPool += amountToMove;
+        }
+    }
+
+    // 6. Distribution
+    const distType = params.distribution || 'hours';
+    const totalWorkerMin = workersOnly.reduce((sum, w) => sum + w.minutes, 0);
+
+    // Add Leader Result
+    if (report.leader) {
+        allWorkersMap[sanitize(report.leader)] = {
+            name: report.leader,
+            role: 'Leader',
+            minutes: leaderMin,
+            amount: leaderPool,
+            isLeader: true
+        };
+    }
+
+    // Add Worker Results
+    workersOnly.forEach(w => {
+        let share = 0;
+        if (workerPool > 0) {
+            if (distType === 'even') share = workerPool / workersOnly.length;
+            else share = totalWorkerMin > 0 ? workerPool * (w.minutes / totalWorkerMin) : 0;
+        }
+        
+        allWorkersMap[sanitize(w.name)] = {
+            name: w.name,
+            role: w.role || 'Worker',
+            minutes: w.minutes,
+            amount: share,
+            isLeader: false
+        };
+    });
+
+    // 7. Apply Custom Bonus Overrides
+    const customBonuses = report.customBonuses || {};
+    let finalTotalBonus = 0;
+    
+    Object.keys(allWorkersMap).forEach(key => {
+        if (customBonuses[key] !== undefined) {
+            allWorkersMap[key].amount = parseFloat(customBonuses[key]);
+            allWorkersMap[key].isCustom = true;
+        }
+        finalTotalBonus += allWorkersMap[key].amount;
+    });
+
+    return { 
+        workers: Object.values(allWorkersMap), 
+        totalBonus: finalTotalBonus, 
+        profit: profit 
+    };
+};
 
 const Bonuses = () => {
     const navigate = useNavigate();
     const [view, setView] = useState('unpaid');
     const [reports, setReports] = useState([]);
     const [config, setConfig] = useState({});
-    const [processedData, setProcessedData] = useState([]);
+    const [processedData, setProcessedData] = useState([]); // For the summary view
     const [loading, setLoading] = useState(true);
     const [expandedRows, setExpandedRows] = useState({});
     const [showSummary, setShowSummary] = useState(true);
@@ -101,9 +268,33 @@ const Bonuses = () => {
         list.sort((a,b) => (b.completedAt?.seconds||0) - (a.completedAt?.seconds||0));
         setReports(list);
 
+        // Build Summary Data for "Pending Breakdown"
         if (view === 'unpaid') {
-            const calcResults = calculateBonuses(list, currentConfig);
-            setProcessedData(calcResults);
+            const summaryMap = {};
+            list.forEach(report => {
+                const result = calculateBonusesInternal(report, currentConfig);
+                result.workers.forEach(w => {
+                    // Only count positive amounts
+                    if (w.amount === 0) return;
+                    
+                    const safeKey = sanitize(w.name);
+                    if(!summaryMap[safeKey]) {
+                        summaryMap[safeKey] = { name: w.name, total: 0, items: [] };
+                    }
+                    
+                    summaryMap[safeKey].total += w.amount;
+                    summaryMap[safeKey].items.push({
+                        company: report.company,
+                        originalDate: report.completedAt ? new Date(report.completedAt.seconds * 1000).toLocaleDateString() : '-',
+                        project: report.project,
+                        amount: w.amount,
+                        hours: w.minutes / 60
+                    });
+                });
+            });
+            // Convert map to array and sort by total
+            const summaryArray = Object.values(summaryMap).sort((a,b) => b.total - a.total);
+            setProcessedData(summaryArray);
         }
         setLoading(false);
     };
@@ -117,14 +308,13 @@ const Bonuses = () => {
 
     // --- PAY ACTIONS ---
     const clickPay = (reportId, amount) => {
-        // Auto-calculate next Wednesday
         const d = new Date();
         const day = d.getDay(); 
         const dist = 6 - day; 
         const nextWed = new Date(d);
         nextWed.setDate(d.getDate() + dist + 4); 
         
-        setPayDate(nextWed.toISOString().split('T')[0]); // Format YYYY-MM-DD
+        setPayDate(nextWed.toISOString().split('T')[0]); 
         setPayTargetId(reportId);
         setPayAmount(amount);
         setShowPayModal(true);
@@ -209,20 +399,19 @@ const Bonuses = () => {
         loadData(config);
     };
 
+    // This wrapper calls the internal logic and formats it for the card
     const getCardData = (r) => {
-        const result = calculateBonuses([r], config);
-        let cardWorkers = [];
-        let totalBonus = 0;
-        result.forEach(emp => {
-            emp.items.forEach(item => {
-                cardWorkers.push({
-                    name: emp.name, role: item.role, hours: item.hours, amount: item.amount,
-                    isCustom: item.isCustom, displayDate: item.originalDate, profit: item.profit, plNumber: item.plNumber
-                });
-                totalBonus += item.amount;
-            });
-        });
-        return { workers: cardWorkers, totalBonus, profit: cardWorkers[0]?.profit || 0 };
+        const result = calculateBonusesInternal(r, config);
+        
+        // Convert the result workers to the format needed for the card
+        // Sort: High Bonus first, then High Hours
+        result.workers.sort((a,b) => b.amount - a.amount || b.minutes - a.minutes);
+        
+        return { 
+            workers: result.workers, 
+            totalBonus: result.totalBonus, 
+            profit: result.profit 
+        };
     };
 
     if (loading) return <div style={{padding:'50px', textAlign:'center'}}>Loading Bonuses...</div>;
@@ -286,9 +475,11 @@ const Bonuses = () => {
                 <div className="bonuses-grid">
                     {reports.map(r => {
                         const { workers, totalBonus, profit } = getCardData(r);
+                        const headerClass = view === 'paid' ? 'card-header paid-header' : 'card-header';
+
                         return (
                             <div key={r.id} className="project-card">
-                                <div className="card-header">
+                                <div className={headerClass}>
                                     <div>
                                         <div className="project-name">{r.project}</div>
                                         <div style={{fontSize:'11px', opacity:0.8}}>{r.company}</div>
@@ -300,30 +491,47 @@ const Bonuses = () => {
                                                 <span className="material-icons settings-icon" onClick={() => openCalcModal(r)}>settings</span>
                                             )}
                                         </div>
-                                        <div style={{fontSize:'11px', opacity:0.8}}>{workers[0]?.displayDate}</div>
+                                        <div style={{fontSize:'11px', opacity:0.8}}>{r.completedAt ? new Date(r.completedAt.seconds * 1000).toLocaleDateString() : ''}</div>
                                     </div>
                                 </div>
                                 
-                                <div className="profit-section">
+                                {r.bonusIneligibleReason && view === 'ineligible' && (
+                                    <div style={{background:'#fdedec', color:'#c0392b', padding:'10px', fontSize:'12px', fontWeight:'bold', borderBottom:'1px solid #eee'}}>
+                                        Reason: {r.bonusIneligibleReason}
+                                    </div>
+                                )}
+
+                                <div className="profit-section" style={{borderBottom:'none', paddingBottom:'4px'}}>
                                     <span style={{fontWeight:'bold', color:'#2c3e50'}}>Net Profit</span>
                                     <span className={`profit-val ${profit<0?'neg':'pos'}`}>${profit.toFixed(2)}</span>
+                                </div>
+                                <div className="profit-section" style={{paddingTop:'0'}}>
+                                    <span style={{fontSize:'12px', fontWeight:'bold', color:'#95a5a6'}}>Total Bonus</span>
+                                    <span style={{fontSize:'14px', fontWeight:'bold', color:'#2c3e50'}}>${totalBonus.toFixed(2)}</span>
                                 </div>
 
                                 <div style={{flexGrow:1}}>
                                     <table className="worker-table">
                                         <thead><tr><th>Name</th><th>Time</th><th style={{textAlign:'right'}}>Bonus</th></tr></thead>
                                         <tbody>
-                                            {workers.map((w, wx) => (
-                                                <tr key={wx}>
-                                                    <td>{w.name} <span style={{fontSize:'10px', color:'#999'}}>({w.role})</span></td>
-                                                    <td>{w.hours.toFixed(1)}h</td>
-                                                    <td style={{textAlign:'right'}}>
-                                                        {w.isCustom && <span style={{color:'blue', marginRight:'2px'}}>*</span>}
-                                                        ${w.amount.toFixed(2)}
-                                                        {view === 'unpaid' && <span className="material-icons" style={{fontSize:'14px', marginLeft:'5px', cursor:'pointer', color:'#999'}} onClick={() => handleEditBonus(r.id, w.name, w.amount)}>edit</span>}
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                            {workers.length > 0 ? (
+                                                workers.map((w, wx) => (
+                                                    <tr key={wx} className={w.isLeader ? 'is-leader' : ''}>
+                                                        <td>
+                                                            {w.name} 
+                                                            {w.isLeader && <span style={{background:'#e0f2f1', color:'#00695c', padding:'2px 6px', borderRadius:'4px', fontSize:'10px', fontWeight:'bold', marginLeft:'5px'}}>LEADER</span>}
+                                                        </td>
+                                                        <td>{(w.minutes/60).toFixed(1)}h</td>
+                                                        <td style={{textAlign:'right'}}>
+                                                            {w.isCustom && <span style={{color:'blue', marginRight:'2px'}}>*</span>}
+                                                            ${w.amount.toFixed(2)}
+                                                            {view === 'unpaid' && <span className="material-icons" style={{fontSize:'14px', marginLeft:'5px', cursor:'pointer', color:'#999'}} onClick={() => handleEditBonus(r.id, w.name, w.amount)}>edit</span>}
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr><td colSpan="3" style={{textAlign:'center', padding:'20px', color:'#999', fontStyle:'italic'}}>No employees found</td></tr>
+                                            )}
                                         </tbody>
                                     </table>
                                 </div>
@@ -332,6 +540,13 @@ const Bonuses = () => {
                                     <div className="card-footer">
                                         <div className="btn-card btn-outline-red" onClick={() => handleMarkIneligible(r.id)}>Block</div>
                                         <div className="btn-card btn-solid-green" onClick={() => clickPay(r.id, totalBonus)}>Pay (${totalBonus.toFixed(2)})</div>
+                                    </div>
+                                )}
+
+                                {view === 'paid' && (
+                                    <div className="history-footer">
+                                        <span className="history-label">Total Paid</span>
+                                        <span className="history-amount">${totalBonus.toFixed(2)}</span>
                                     </div>
                                 )}
                             </div>

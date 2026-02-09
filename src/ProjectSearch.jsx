@@ -10,12 +10,12 @@ const FIELD_MAPPINGS = {
     'Line Leader': ['line leader', 'line leader_1', 'leader', 'lineleader'],
     'Desc': ['desc', 'financedesc', 'description', 'project', 'project name', 'item'],
     'CUSTOMER': ['customer', 'company', 'client', 'customer name'],
-    'PL#': ['pl#', 'pl', 'job id', 'job #', 'pl number'],
+    'PL#': ['pl#', 'pl', 'job id', 'job #', 'pl number', 'plnumber', 'jobid'],
     'Inv $': ['inv $', 'invoice amount', 'invoice total', 'total'],
-    'Profit/ loss': ['profit/ loss', 'p/l', 'profit', 'loss', 'net profit'],
+    'Profit/ loss': ['profit/ loss', 'p/l', 'profit', 'loss', 'net profit', 'netprofit'],
     'Labor HRS': ['labor hrs', 'hours', 'total hours'],
-    'Cost': ['cost', 'labor cost'],
-    'Units': ['units', 'total units', 'qty', 'quantity'],
+    'Cost': ['cost', 'labor cost', 'laborcost'],
+    'Units': ['units', 'total units', 'qty', 'quantity', 'totalunits'],
     'Unit/Sec': ['unit/sec', 'units per sec'],
     'Sec/Unit': ['sec/unit', 'efficiency', 'seconds per unit'],
     'Commission': ['commission', 'comm'],
@@ -41,7 +41,7 @@ const FIELD_MAPPINGS = {
 
 const DEFAULT_COLUMNS = [
     'Line Leader', 'Date', 'CUSTOMER', 'PL#', 'Desc', 
-    'Target Price', // <--- Forced here
+    'Target Price', 
     'Expected Units',
     'Labor HRS', 'Cost', 'Inv $', 'Units', 
     'Unit/Sec', 'Commission', 'Agent', 
@@ -129,9 +129,14 @@ const ProjectSearch = () => {
     const initData = async () => {
         setLoading(true);
         try {
-            // 1. Get Categories
+            // 1. Get Categories & Cost Config
+            let costPerHour = 0;
             const cSnap = await getDoc(doc(db, "config", "finance"));
-            if(cSnap.exists()) setCategories((cSnap.data().projectTypes || []).sort());
+            if(cSnap.exists()) {
+                const d = cSnap.data();
+                setCategories((d.projectTypes || []).sort());
+                costPerHour = parseFloat(d.costPerHour) || 0;
+            }
 
             // 2. Fetch Data
             const [archiveResult, reportsResult] = await Promise.allSettled([
@@ -160,8 +165,10 @@ const ProjectSearch = () => {
                     const secPerUnit = (units > 0 && secondsWorked > 0) ? (secondsWorked / units) : 0;
                     const unitPerSec = (secondsWorked > 0) ? (units / secondsWorked) : 0;
 
-                    // Calculate Finance Price per Unit for the "Calc" column
+                    // Calculate Finance Metrics
                     const calculatedPricePerUnit = (units > 0) ? ((data.invoiceAmount || 0) / units) : 0;
+                    const estimatedCost = laborHrs * costPerHour;
+                    const estimatedProfit = (data.invoiceAmount || 0) - estimatedCost;
 
                     const enriched = {
                         ...data,
@@ -172,9 +179,14 @@ const ProjectSearch = () => {
                         'Inv $': data.invoiceAmount || 0,
                         'CUSTOMER': data.company,
                         'Desc': data.project,
-                        'Line Leader': data.leader, 
-                        'PL#': data.jobId,
+                        'Line Leader': data.leader,
+                        'PL#': data.jobId || data.plNumber, // Added Fallback
                         'Type': data.jobName || data.category || '',
+                        
+                        // Explicitly Map Calculated Values
+                        'Units': units,
+                        'Cost': estimatedCost,
+                        'Profit/ loss': estimatedProfit,
                         
                         // 1. Realized (Calculated) Price
                         'Realized Price': calculatedPricePerUnit,
@@ -300,6 +312,7 @@ const ProjectSearch = () => {
                                   k.includes('unit/sec') || k.includes('bonus') ||
                                   k.includes('quote');
 
+            // Intentionally excluding 'units' and 'qty' from decimal forcing if they are whole numbers
             if (needsDecimals) return val.toFixed(2);
         }
         return val;
@@ -486,7 +499,7 @@ const ProjectSearch = () => {
                                                 userSelect:'none',
                                                 borderRadius:'4px',
                                                 transition:'background 0.2s'
-                                            }}
+                                            }} 
                                             onMouseEnter={e => e.currentTarget.style.background = '#f5f5f5'}
                                             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                                             >

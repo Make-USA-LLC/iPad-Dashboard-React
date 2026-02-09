@@ -123,7 +123,7 @@ function App() {
       <Route path="/bonuses" element={<DashboardGuard><Bonuses /></DashboardGuard>} />
       <Route path="/bonus-reports" element={<DashboardGuard><BonusReports /></DashboardGuard>} />
       <Route path="/commisions" element={<DashboardGuard><Commisions /></DashboardGuard>} /> 
-      
+       <Route path="/Dashboard" element={<DashboardGuard><Dashboard /></DashboardGuard>} /> 
       <Route path="/manual-ingest" element={<DashboardGuard><ManualIngest /></DashboardGuard>} />
       <Route path="/manual_ingest" element={<DashboardGuard><ManualIngest /></DashboardGuard>} />
       <Route path="/production-input" element={<DashboardGuard><ProductionInput /></DashboardGuard>} />
