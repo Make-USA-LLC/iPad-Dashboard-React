@@ -1,89 +1,138 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import './AgentPortal.css';
-import { db, auth, loadUserData } from './firebase_config.jsx';
+import { db, auth } from './firebase_config.jsx';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { 
+    onAuthStateChanged, 
+    signOut, 
+    signInWithEmailAndPassword, 
+    createUserWithEmailAndPassword 
+} from 'firebase/auth';
 
 const AgentPortal = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const viewAsParam = searchParams.get('viewAs'); // Check for impersonation
+    const viewAsParam = searchParams.get('viewAs');
 
+    // --- STATE ---
+    const [loading, setLoading] = useState(true);
     const [currentUser, setCurrentUser] = useState(null);
+    
+    // Portal Data
     const [agentName, setAgentName] = useState('');
     const [reports, setReports] = useState([]);
     const [config, setConfig] = useState({});
-    const [filter, setFilter] = useState('pending'); // 'pending' or 'paid'
-    const [loading, setLoading] = useState(true);
-    
-    // Admin Impersonation State
+    const [filter, setFilter] = useState('pending'); 
     const [isAdmin, setIsAdmin] = useState(false);
+    const [accessDenied, setAccessDenied] = useState(false);
 
+    // Auth UI State
+    const [authMode, setAuthMode] = useState('signin');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [authMsg, setAuthMsg] = useState({ type: '', text: '' });
+
+    // --- 1. AUTH LISTENER ---
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             if (user) {
                 setCurrentUser(user);
                 initPortal(user);
             } else {
-                navigate('/');
+                setCurrentUser(null);
+                setAgentName('');
+                setReports([]);
+                setAccessDenied(false);
+                setLoading(false);
             }
         });
         return () => unsubscribe();
-    }, [viewAsParam]); // Re-run if query param changes
+    }, [viewAsParam]);
 
-    const initPortal = async (user) => {
-        // 1. Load User Role
-        const uSnap = await getDoc(doc(db, "users", user.email.toLowerCase()));
-        if (!uSnap.exists()) return navigate('/'); 
-        const role = uSnap.data().role;
+    // --- 2. AUTH HANDLERS ---
+    const handleAuth = async (e) => {
+        e.preventDefault();
+        setAuthMsg({ type: '', text: '' });
 
-        // 2. Check Admin Status
-        let admin = (role === 'admin');
-        if (!admin) {
-            const rolesSnap = await getDoc(doc(db, "config", "roles"));
-            if (rolesSnap.exists()) {
-                const rc = rolesSnap.data()[role];
-                if (rc && rc['admin_view']) admin = true;
-            }
-        }
-        setIsAdmin(admin);
-
-        // 3. Load Finance Config (for rates)
-        const cSnap = await getDoc(doc(db, "config", "finance"));
-        if (!cSnap.exists()) { alert("Config Error"); return; }
-        const financeData = cSnap.data();
-        setConfig(financeData);
-
-        // 4. Determine Agent Identity
-        let targetAgent = "";
-
-        if (admin && viewAsParam) {
-            // Admin Impersonating
-            targetAgent = decodeURIComponent(viewAsParam);
-        } else {
-            // Standard User - Find Linked Agent
-            const agentsList = financeData.agents || [];
-            const myEmail = user.email.toLowerCase();
-            const found = agentsList.find(a => (a.email || '').toLowerCase() === myEmail);
-            
-            if (found) {
-                targetAgent = found.name;
+        try {
+            if (authMode === 'signin') {
+                await signInWithEmailAndPassword(auth, email, password);
             } else {
-                if(admin) {
-                    // Admin logged in without impersonation -> Show blank/selector hint
-                    setLoading(false);
-                    return; 
-                } else {
-                    alert("Your email is not linked to an Agent account.");
-                    navigate('/');
-                    return;
+                await createUserWithEmailAndPassword(auth, email, password);
+            }
+        } catch (error) {
+            let msg = error.message;
+            if (msg.includes('auth/email-already-in-use')) msg = "Account exists. Please Sign In.";
+            if (msg.includes('auth/wrong-password')) msg = "Invalid password.";
+            if (msg.includes('auth/user-not-found')) msg = "No account found.";
+            setAuthMsg({ type: 'error', text: msg });
+        }
+    };
+
+    const handleLogout = () => signOut(auth);
+
+    // --- 3. PORTAL INIT LOGIC ---
+    const initPortal = async (user) => {
+        setLoading(true);
+        try {
+            // 1. Check User Doc
+            const uSnap = await getDoc(doc(db, "users", user.email.toLowerCase()));
+            // Note: Agents might not have a "users" doc initially if they just signed up via Portal
+            // So we skip hard failure here and rely on Config check below
+            
+            const role = uSnap.exists() ? uSnap.data().role : 'agent'; 
+
+            // 2. Check Admin Status
+            let admin = (role === 'admin');
+            if (!admin && uSnap.exists()) {
+                const rolesSnap = await getDoc(doc(db, "config", "roles"));
+                if (rolesSnap.exists()) {
+                    const rc = rolesSnap.data()[role];
+                    if (rc && rc['admin_view']) admin = true;
                 }
             }
-        }
+            setIsAdmin(admin);
 
-        setAgentName(targetAgent);
-        loadReports(targetAgent, financeData);
+            // 3. Load Finance Config
+            const cSnap = await getDoc(doc(db, "config", "finance"));
+            if (!cSnap.exists()) throw new Error("System config missing.");
+            const financeData = cSnap.data();
+            setConfig(financeData);
+
+            // 4. Determine Agent Identity
+            let targetAgent = "";
+
+            if (admin && viewAsParam) {
+                targetAgent = decodeURIComponent(viewAsParam);
+            } else {
+                // Find Linked Agent
+                const agentsList = financeData.agents || [];
+                const myEmail = user.email.toLowerCase();
+                const found = agentsList.find(a => (a.email || '').toLowerCase() === myEmail);
+                
+                if (found) {
+                    targetAgent = found.name;
+                } else {
+                    if (admin) {
+                        setLoading(false);
+                        return; // Admin without viewAs -> Show empty state
+                    } else {
+                        setAccessDenied(true);
+                        setLoading(false);
+                        return;
+                    }
+                }
+            }
+
+            setAgentName(targetAgent);
+            await loadReports(targetAgent, financeData);
+
+        } catch (e) {
+            console.error(e);
+            setAuthMsg({ type: 'error', text: "Init Error: " + e.message });
+        }
+        setLoading(false);
     };
 
     const loadReports = async (target, financeConfig) => {
@@ -93,9 +142,7 @@ const AgentPortal = () => {
         let list = [];
         snap.forEach(d => {
             const data = d.data();
-            // Filter by Agent Name
             if (data.agentName === target) {
-                // Calculate Commission here for display
                 let rate = 0;
                 if(financeConfig.agents) {
                     const ag = financeConfig.agents.find(a => a.name === target);
@@ -116,15 +163,11 @@ const AgentPortal = () => {
             }
         });
 
-        // Sort by date desc
         list.sort((a,b) => (b.completedAt?.seconds||0) - (a.completedAt?.seconds||0));
         setReports(list);
-        setLoading(false);
     };
 
-    const handleLogout = () => signOut(auth).then(() => navigate('/'));
-
-    // --- RENDER HELPERS ---
+    // --- 4. RENDER HELPERS ---
     const filteredReports = reports.filter(r => {
         const isPaid = r.commissionPaid === true;
         return filter === 'paid' ? isPaid : !isPaid;
@@ -132,11 +175,65 @@ const AgentPortal = () => {
 
     const totalAmt = filteredReports.reduce((s, r) => s + r.commAmount, 0);
 
-    if (loading) return <div style={{padding:'50px', textAlign:'center'}}>Loading Portal...</div>;
+    // --- 5. RENDER: LOADING ---
+    if (loading) return <div style={{padding:'50px', textAlign:'center'}}>Loading...</div>;
 
+    // --- 6. RENDER: LOGIN SCREEN (If no user) ---
+    if (!currentUser) {
+        return (
+            <div className="ap-auth-wrapper">
+                <div className="ap-login-card">
+                    <div className="ap-logo-section">
+                        <span className="material-icons">work_outline</span> Agent Portal
+                    </div>
+                    <div className="ap-subtitle">Commission Tracking System</div>
+
+                    <div className="ap-auth-tabs">
+                        <div className={`ap-auth-tab ${authMode==='signin'?'active':''}`} onClick={() => setAuthMode('signin')}>Sign In</div>
+                        <div className={`ap-auth-tab ${authMode==='signup'?'active':''}`} onClick={() => setAuthMode('signup')}>Create Account</div>
+                    </div>
+
+                    <form onSubmit={handleAuth}>
+                        <input 
+                            className="ap-login-input" type="email" placeholder="Email Address" 
+                            value={email} onChange={e=>setEmail(e.target.value)} required 
+                        />
+                        <input 
+                            className="ap-login-input" type="password" placeholder="Password" 
+                            value={password} onChange={e=>setPassword(e.target.value)} required 
+                        />
+                        <button type="submit" className="ap-btn-login">
+                            {authMode === 'signin' ? "Sign In" : "Create Account"}
+                        </button>
+                    </form>
+
+                    {authMsg.text && (
+                        <div className={`ap-msg-box ap-msg-error`}>{authMsg.text}</div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    // --- 7. RENDER: ACCESS DENIED ---
+    if (accessDenied) {
+        return (
+            <div className="ap-auth-wrapper">
+                <div className="ap-login-card">
+                    <div className="ap-msg-box ap-msg-error" style={{textAlign:'center'}}>
+                        <h3>Account Not Linked</h3>
+                        <p>Email <strong>{currentUser.email}</strong> is not linked to an Agent Profile.</p>
+                        <p>Please contact Admin.</p>
+                    </div>
+                    <button className="ap-btn-login ap-btn-secondary" onClick={handleLogout}>Sign Out</button>
+                </div>
+            </div>
+        );
+    }
+
+    // --- 8. RENDER: MAIN DASHBOARD ---
     return (
         <div className="agent-portal-wrapper">
-            {/* ADMIN TOOLBAR */}
             {isAdmin && (
                 <div className="ap-admin-toolbar">
                     <div><span className="ap-admin-badge">ADMIN</span> Viewing as: <strong>{agentName || "None"}</strong></div>
@@ -147,7 +244,9 @@ const AgentPortal = () => {
             )}
 
             <div className="agent-portal-header">
-                <div className="portal-title"><span className="material-icons">pie_chart</span> Commissions</div>
+                <div className="portal-title" style={{fontWeight:'bold', display:'flex', alignItems:'center', gap:'10px'}}>
+                    <span className="material-icons">pie_chart</span> Commissions
+                </div>
                 <div onClick={handleLogout} style={{cursor:'pointer', display:'flex', alignItems:'center', gap:'5px', fontSize:'13px'}}>
                     <span className="material-icons" style={{fontSize:'16px'}}>logout</span> Sign Out
                 </div>
@@ -156,7 +255,7 @@ const AgentPortal = () => {
             <div className="agent-portal-container">
                 <div className="ap-profile-card">
                     <div>
-                        <div className="welcome-text">Agent Profile</div>
+                        <div className="welcome-text" style={{fontSize:'12px', color:'#777', fontWeight:'bold', textTransform:'uppercase'}}>Agent Profile</div>
                         <div className="ap-user-name">{agentName || "Unknown"}</div>
                     </div>
                     <div><span className="material-icons" style={{fontSize:'40px', color:'#8e44ad'}}>badge</span></div>
@@ -168,7 +267,7 @@ const AgentPortal = () => {
                 </div>
 
                 <div className="ap-total-summary">
-                    <div className="total-label">Total Amount</div>
+                    <div style={{fontSize:'12px', textTransform:'uppercase', opacity:0.8}}>Total Amount</div>
                     <div className="ap-total-val">${totalAmt.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
                 </div>
 

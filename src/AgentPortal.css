@@ -1,74 +1,142 @@
 /* src/AgentPortal.css */
 
-.agent-portal-wrapper {
-    height: 100vh;
-    width: 100%;
-    overflow-y: auto;
-    background: #f3e5f5; /* Purple tint background */
-    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-}
-
-.agent-portal-container {
-    max-width: 800px;
-    margin: 20px auto;
-    padding: 0 15px 50px 15px;
-}
-
-/* HEADER */
-.agent-portal-header {
-    background: #4a148c; /* Deep Purple */
-    padding: 15px 20px;
-    color: white;
+/* --- AUTH / LOGIN STYLES --- */
+.ap-auth-wrapper {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-/* ADMIN BAR */
-.ap-admin-toolbar {
-    background: #34495e;
-    color: white;
-    padding: 10px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 13px;
-    border-bottom: 3px solid #8e44ad;
-}
-.ap-admin-badge { background: #e74c3c; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 10px; margin-right: 10px; }
-
-/* PROFILE */
-.ap-profile-card {
-    background: white;
+    min-height: 100vh;
+    background: #f3e5f5; /* Light Purple Bg */
     padding: 20px;
+}
+
+.ap-login-card {
+    background: white;
+    padding: 40px;
     border-radius: 12px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    margin-bottom: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 360px;
+    text-align: center;
+}
+
+.ap-logo-section {
+    font-size: 24px;
+    font-weight: bold;
+    color: #8e44ad;
+    margin-bottom: 5px;
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.ap-subtitle {
+    font-size: 14px;
+    color: #7f8c8d;
+    margin-bottom: 30px;
+}
+
+.ap-auth-tabs {
+    display: flex;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 20px;
+}
+
+.ap-auth-tab {
+    flex: 1;
+    padding: 10px;
+    cursor: pointer;
+    color: #999;
+    font-weight: 600;
+    border-bottom: 2px solid transparent;
+}
+
+.ap-auth-tab.active {
+    color: #8e44ad;
+    border-bottom-color: #8e44ad;
+}
+
+.ap-login-input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+
+.ap-login-input:focus {
+    border-color: #8e44ad;
+    outline: none;
+}
+
+.ap-btn-login {
+    width: 100%;
+    padding: 12px;
+    background: #8e44ad;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.ap-btn-login:hover { background: #732d91; }
+.ap-btn-secondary { background: #95a5a6; margin-top: 10px; }
+
+.ap-msg-box { font-size: 13px; margin-top: 15px; padding: 10px; border-radius: 4px; text-align: left; }
+.ap-msg-error { background: #fee2e2; color: #c0392b; }
+
+/* --- PORTAL STYLES (Existing) --- */
+.agent-portal-wrapper { min-height: 100vh; background: #f3e5f5; font-family: 'Segoe UI', sans-serif; padding-bottom: 40px; }
+
+.agent-portal-header {
+    background: #4a148c; color: white; padding: 15px 20px;
+    display: flex; justify-content: space-between; align-items: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100;
+}
+
+.agent-portal-container { max-width: 800px; margin: 20px auto; padding: 0 15px; }
+
+.ap-profile-card {
+    background: white; padding: 20px; border-radius: 12px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px;
+    display: flex; justify-content: space-between; align-items: center;
     border-left: 5px solid #8e44ad;
 }
+
 .ap-user-name { font-size: 24px; font-weight: bold; color: #4a148c; margin-top: 5px; }
 
-/* CONTROLS */
 .ap-controls { display: flex; gap: 10px; margin-bottom: 20px; }
-.ap-chip { background: #fff; border: 1px solid #ddd; padding: 10px 20px; border-radius: 20px; font-size: 14px; font-weight: 600; color: #555; cursor: pointer; flex: 1; text-align: center; transition: 0.2s; }
-.ap-chip.active { background: #8e44ad; color: white; border-color: #8e44ad; box-shadow: 0 4px 6px rgba(142,68,173,0.3); }
+.ap-chip { 
+    background: white; border: 1px solid #ddd; padding: 10px 20px; 
+    border-radius: 20px; font-size: 14px; font-weight: 600; color: #555; 
+    cursor: pointer; flex: 1; text-align: center; 
+}
+.ap-chip.active { background: #8e44ad; color: white; border-color: #8e44ad; }
 
-/* CARDS */
+.ap-total-summary { 
+    background: #4a148c; color: white; padding: 20px; border-radius: 12px; 
+    margin-bottom: 20px; text-align: center; 
+}
+.ap-total-val { font-size: 36px; font-weight: bold; margin-top: 5px; }
+
 .ap-comm-card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px; overflow: hidden; }
 .ap-comm-header { background: #f9f3fc; padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
 .ap-comm-date { font-weight: bold; color: #6a1b9a; font-size: 13px; }
-.ap-comm-body { padding: 20px; }
 
+.ap-comm-body { padding: 20px; }
 .ap-financials { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 15px; border-top: 1px dashed #eee; padding-top: 15px; }
 .ap-fin-val { font-size: 14px; color: #555; font-weight: 600; }
 .ap-final-amt { font-size: 24px; font-weight: bold; color: #8e44ad; }
 
-.ap-total-summary { background: #4a148c; color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: center; box-shadow: 0 4px 10px rgba(74,20,140,0.3); }
-.ap-total-val { font-size: 36px; font-weight: bold; margin-top: 5px; }
+/* Admin Toolbar */
+.ap-admin-toolbar {
+    background: #34495e; color: white; padding: 10px 20px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px; border-bottom: 3px solid #8e44ad;
+}
+.ap-admin-badge { background: #e74c3c; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 10px; margin-right: 5px; }

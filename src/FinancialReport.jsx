@@ -96,21 +96,21 @@ const FinancialReport = () => {
         const exportData = reports.map(calcRowData);
         
         const flatData = exportData.map(r => ({
-            "Rec Price": r.isComplete ? r.recPrice : '',
+            "Rec Price": r.recPrice,
             "Leader": r.leader,
             "Date": r.dateDisplay,
             "Customer": r.company,
             "PL#": r.plNumber,
             "Desc": r.financeDesc,
-            "Labor HRS": r.isComplete ? r.laborHrs.toFixed(2) : '',
-            "Cost": r.isComplete ? r.cost : '',
-            "Inv $": r.isComplete ? r.inv : '',
-            "Units": r.isComplete ? r.units : '',
-            "Sec/Unit": r.isComplete ? r.secPerUnit : '',
-            "Comm": r.isComplete ? r.commAmount : '',
+            "Labor HRS": r.laborHrs.toFixed(2),
+            "Cost": r.cost,
+            "Inv $": r.inv,
+            "Units": r.units,
+            "Sec/Unit": r.secPerUnit,
+            "Comm": r.commAmount,
             "Agent": r.agentName,
-            "Profit $": r.isComplete ? r.profit : '',
-            "Profit %": r.isComplete ? (r.profitPercent.toFixed(0) + '%') : '',
+            "Profit $": r.profit,
+            "Profit %": (r.profitPercent.toFixed(0) + '%'),
             "Type": r.projectType
         }));
 
@@ -124,16 +124,17 @@ const FinancialReport = () => {
         const isComplete = data.financeStatus === "complete";
         const dateDisplay = data.completedAt?.seconds ? new Date(data.completedAt.seconds*1000).toLocaleDateString() : "N/A";
         
-        if (!isComplete) return { isComplete: false, data, dateDisplay, leader: data.leader, company: data.company, project: data.project };
-
         const orig = Number(data.originalSeconds) || 0;
         const final = Number(data.finalSeconds) || 0;
+        
         const laborHrs = (orig > 0) ? (orig - final) / 3600 : 0;
         const secondsSpent = orig - final;
         
         const cost = laborHrs * config.costPerHour;
+        
         const inv = Number(data.invoiceAmount) || 0;
-        const units = Number(data.totalUnits) || 1;
+        const units = Number(data.totalUnits) || 1; // Default to 1 for calc safety
+        
         const secPerUnit = (units > 0 && secondsSpent > 0) ? (secondsSpent / units) : 0;
 
         let commAmount = 0;
@@ -151,12 +152,12 @@ const FinancialReport = () => {
         const recPrice = units > 0 ? (cost / units) : 0;
 
         return {
-            isComplete: true,
+            isComplete,
             leader: data.leader,
             dateDisplay,
             company: data.company,
-            plNumber: data.plNumber,
-            financeDesc: data.financeDesc || data.project,
+            plNumber: data.plNumber || '', 
+            financeDesc: data.financeDesc || data.project, 
             laborHrs,
             cost,
             inv,
@@ -229,35 +230,49 @@ const FinancialReport = () => {
                             {reports.map(raw => {
                                 const r = calcRowData(raw);
                                 
-                                if (!r.isComplete) {
-                                    return (
-                                        <tr key={raw.id}>
-                                            <td>--</td>
-                                            <td>{r.leader || '-'}</td>
-                                            <td>{r.dateDisplay}</td>
-                                            <td>{r.company || '-'}</td>
-                                            <td colSpan="12" className="bg-pending">⚠ PENDING INPUT: {r.project}</td>
-                                        </tr>
-                                    );
-                                }
+                                // Logic: Missing if Inv is 0 OR Units is 0/undefined
+                                const missingFinancials = !r.inv || !raw.totalUnits; 
 
                                 return (
-                                    <tr key={raw.id}>
-                                        <td className="align-right">{fmt(r.recPrice)}</td>
+                                    <tr key={raw.id} style={!r.isComplete ? {background: '#fffdf0'} : {}}>
+                                        {/* Col 1: Rec Price - NEW WARNING LOGIC */}
+                                        <td className="align-right">
+                                            {raw.totalUnits ? fmt(r.recPrice) : <span style={{color:'#d35400', fontSize:'1.4em', fontWeight:'bold'}} title="Missing Units">⚠</span>}
+                                        </td>
+
+                                        {/* Cols 2-4 */}
                                         <td>{r.leader}</td>
                                         <td>{r.dateDisplay}</td>
                                         <td>{r.company}</td>
-                                        <td>{r.plNumber}</td>
+                                        
+                                        {/* Col 5: PL Warning */}
+                                        <td style={{textAlign:'center'}}>
+                                            {r.plNumber ? r.plNumber : <span style={{color:'#d35400', fontSize:'1.4em', fontWeight:'bold'}} title="Missing PL#">⚠</span>}
+                                        </td>
+                                        
+                                        {/* Cols 6-8 */}
                                         <td className="align-left">{r.financeDesc}</td>
                                         <td>{r.laborHrs.toFixed(2)}</td>
                                         <td className="align-right">{fmt(r.cost)}</td>
-                                        <td className="align-right">{fmt(r.inv)}</td>
-                                        <td>{fmtN(r.units)}</td>
-                                        <td>{fmtN(r.secPerUnit)}</td>
-                                        <td className="align-right">{r.commAmount > 0 ? fmt(r.commAmount) : '-'}</td>
-                                        <td>{r.agentName || '-'}</td>
-                                        <td className={`align-right ${r.profit < 0 ? 'bg-red-cell' : ''}`}>{fmt(r.profit)}</td>
-                                        <td className={r.profit < 0 ? 'bg-red-cell' : ''}>{r.profitPercent.toFixed(0)}%</td>
+                                        
+                                        {/* Cols 9-15: Financial Data OR Warning Banner */}
+                                        {missingFinancials ? (
+                                            <td colSpan="7" className="bg-pending" style={{textAlign:'center', color:'#d35400', fontWeight:'bold', letterSpacing:'0.5px'}}>
+                                                ⚠ MISSING INVOICE / UNITS
+                                            </td>
+                                        ) : (
+                                            <>
+                                                <td className="align-right">{fmt(r.inv)}</td>
+                                                <td>{fmtN(r.units)}</td>
+                                                <td>{fmtN(r.secPerUnit)}</td>
+                                                <td className="align-right">{r.commAmount > 0 ? fmt(r.commAmount) : '-'}</td>
+                                                <td>{r.agentName || '-'}</td>
+                                                <td className={`align-right ${r.profit < 0 ? 'bg-red-cell' : ''}`}>{fmt(r.profit)}</td>
+                                                <td className={r.profit < 0 ? 'bg-red-cell' : ''}>{r.profitPercent.toFixed(0)}%</td>
+                                            </>
+                                        )}
+
+                                        {/* Col 16: Type */}
                                         <td>{r.projectType}</td>
                                     </tr>
                                 );

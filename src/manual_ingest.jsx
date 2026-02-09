@@ -115,6 +115,9 @@ const ManualIngest = () => {
         
         const badIds = [(new Date().getFullYear()).toString(), (new Date().getFullYear()+1).toString()];
 
+        // 1. Create a quick lookup set of lowercase names to make matching easier
+        const knownNames = Object.keys(workersMap).filter(k => isNaN(k));
+
         lines.forEach(line => {
             const cleanLine = line.trim();
             if(!cleanLine) return;
@@ -156,10 +159,22 @@ const ManualIngest = () => {
                 }
             }
             
-            // B. ID Summaries
-            if (/^\d{4,15}$/.test(cleanLine)) {
+            // B. ID Summaries (Card Numbers)
+            else if (/^\d{4,15}$/.test(cleanLine)) {
                 if (!badIds.includes(cleanLine)) {
                     allScanIds.add(cleanLine);
+                }
+            } 
+
+            // C. Name Matching (NEW ADDITION)
+            else {
+                // Check if this line matches a known worker name (case-insensitive)
+                const matchedName = knownNames.find(name => 
+                    name.toLowerCase() === cleanLine.toLowerCase()
+                );
+
+                if (matchedName) {
+                    allScanIds.add(matchedName);
                 }
             }
         });

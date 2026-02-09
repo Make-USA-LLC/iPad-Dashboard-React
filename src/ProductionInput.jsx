@@ -10,8 +10,11 @@ const ReportCard = ({ data, projectTypes, onRefresh }) => {
     // Initial State setup
     const [plNumber, setPlNumber] = useState(data.plNumber ? data.plNumber.replace(/^(PL-|PL)/i, '').trim() : '');
     const [projectType, setProjectType] = useState(data.projectType || '');
-    const [isBonusEligible, setIsBonusEligible] = useState(data.bonusEligible !== false); // Default true
+    
+    // BONUS LOGIC: Defaults to True (Eligible) unless explicitly False
+    const [isBonusEligible, setIsBonusEligible] = useState(data.bonusEligible !== false); 
     const [bonusReason, setBonusReason] = useState(data.bonusIneligibleReason || '');
+    
     const [isAdjusting, setIsAdjusting] = useState(data.laborAdjustmentActive || false);
     
     // Adjustment States
@@ -56,14 +59,21 @@ const ReportCard = ({ data, projectTypes, onRefresh }) => {
     };
 
     const handleSubmit = async () => {
+        // 1. Basic Validation
         if(!plNumber || !projectType) return alert("Please enter PL# and Production Type.");
-        if(!isBonusEligible && !bonusReason) return alert("Please enter a reason for bonus ineligibility.");
+        
+        // 2. Bonus Validation: If NOT eligible, reason is mandatory
+        if(!isBonusEligible && !bonusReason.trim()) {
+            return alert("Please enter a reason for bonus ineligibility.");
+        }
 
         let updates = {
             plNumber: plNumber,
             projectType: projectType,
             financeStatus: "pending_finance",
             laborAdjustmentActive: isAdjusting,
+            
+            // 3. Save Bonus Data
             bonusEligible: isBonusEligible,
             bonusIneligibleReason: isBonusEligible ? "" : bonusReason
         };
@@ -120,15 +130,27 @@ const ReportCard = ({ data, projectTypes, onRefresh }) => {
                 </div>
             </div>
 
+            {/* --- BONUS SECTION (Matching HTML Logic) --- */}
             <div className="pi-bonus-box">
                 <label className="pi-chk-container">
-                    <input type="checkbox" checked={isBonusEligible} onChange={e => setIsBonusEligible(e.target.checked)} />
+                    <input 
+                        type="checkbox" 
+                        checked={isBonusEligible} 
+                        onChange={e => setIsBonusEligible(e.target.checked)} 
+                    />
                     <span className="pi-chk-label">Project Eligible for Bonus?</span>
                 </label>
+                
+                {/* Reason box shows only if NOT eligible */}
                 {!isBonusEligible && (
                     <div className="pi-reason-box">
                         <label className="pi-label" style={{color:'#c0392b'}}>Reason for Ineligibility *</label>
-                        <input className="pi-input" value={bonusReason} onChange={e => setBonusReason(e.target.value)} placeholder="e.g. Rework, Quality Issue" />
+                        <input 
+                            className="pi-input" 
+                            value={bonusReason} 
+                            onChange={e => setBonusReason(e.target.value)} 
+                            placeholder="e.g. Rework Required, Late Shipment, Quality Issue" 
+                        />
                     </div>
                 )}
             </div>
@@ -176,7 +198,6 @@ const ReportCard = ({ data, projectTypes, onRefresh }) => {
                 )}
             </div>
 
-            {/* --- UPDATED FOOTER --- */}
             <div className="pi-card-footer">
                 <div className="pi-action-group">
                     <button className="btn-text btn-red-text" onClick={handleDelete}>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Dashboard from './Dashboard';
 import Login from './Login';
 import Admin from './Admin';
@@ -31,18 +31,14 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // 1. Handle Subdomain Redirects
-  useEffect(() => {
-    const host = window.location.hostname;
-    if (host.includes("portal.makeusa") || host.includes("portal.makeit")) {
-       window.location.replace("https://makeusa.us/employee.html");
-    } else if (host.includes("agent") || host.includes("commission")) {
-       window.location.replace("https://makeusa.us/agent_portal.html");
-    }
-  }, []);
+  // 1. DETERMINE DOMAIN CONTEXT
+  const host = window.location.hostname;
+  const isEmployeeDomain = host.includes("portal.make"); 
+  const isAgentDomain = host.includes("agent") || host.includes("commission");
 
-  // 2. Auth Listener
+  // 2. Auth Listener (Just updates state, DOES NOT REDIRECT)
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
@@ -50,8 +46,6 @@ function App() {
       } else {
         setUser(null);
         setLoading(false);
-        // Only redirect to login if we are not already there
-        if (window.location.pathname !== '/') navigate('/');
       }
     });
     return () => unsubscribe();
@@ -59,7 +53,7 @@ function App() {
 
   const checkAccess = async (currentUser) => {
     const emailKey = currentUser.email.toLowerCase();
-
+    
     // Admin Bypass
     if (emailKey === "daniel.s@makeit.buzz") {
       await setDoc(doc(db, "users", emailKey), { role: "admin", email: emailKey, allowPassword: true }, { merge: true });
@@ -71,14 +65,12 @@ function App() {
     try {
       const userDoc = await getDoc(doc(db, "users", emailKey));
       if (!userDoc.exists()) {
-        alert("Access Denied: User not found.");
-        await signOut(auth);
-        setUser(null);
+         // We allow the Portals to handle "access denied" internally now
+         setUser(null);
       } else {
         const data = userDoc.data();
         const isGoogle = currentUser.providerData.some(p => p.providerId === 'google.com');
         if (!isGoogle && data.allowPassword !== true && data.role !== 'admin') {
-            alert("Access Denied: Please sign in with Google.");
             await signOut(auth);
             setUser(null);
         } else {
@@ -94,44 +86,63 @@ function App() {
 
   if (loading) return <div style={{color:'white', background:'#1e3c72', height:'100vh', display:'flex', justifyContent:'center', alignItems:'center'}}>Loading System...</div>;
 
-  if (!user) return <Login />;
+  // --- HELPER: MAIN DASHBOARD PROTECTION ---
+  // Only the Main Dashboard forces the Blue Login here.
+  // Portals handle their own login internally.
+  const DashboardGuard = ({ children }) => {
+      if (!user) return <Login type="admin" />;
+      return children;
+  };
 
   return (
     <Routes>
-      <Route path="/" element={<Dashboard />} />
-      <Route path="/admin" element={<Admin />} />
-      <Route path="/agent-management" element={<AgentManagement />} />
-      <Route path="/bonuses" element={<Bonuses />} />
-      <Route path="/bonus-reports" element={<BonusReports />} />
+      {/* --- PUBLIC ROUTES --- */}
+      <Route path="/kiosk" element={<Kiosk />} />
+      <Route path="/kiosk.html" element={<Kiosk />} />
+
+      {/* --- ROOT PATH (Domain Aware) --- */}
+      <Route path="/" element={
+          isEmployeeDomain ? <EmployeePortal /> :
+          isAgentDomain ? <AgentPortal /> :
+          <DashboardGuard><Dashboard /></DashboardGuard>
+      } />
+
+      {/* --- DIRECT PORTAL ACCESS --- */}
       <Route path="/employee-portal" element={<EmployeePortal />} />
       <Route path="/EmployeePortal" element={<EmployeePortal />} />
-      <Route path="/commisions" element={<Commisions />} /> 
-      <Route path="/AgentPortal" element={<AgentPortal />} />
+      
       <Route path="/agent-portal" element={<AgentPortal />} />
-      <Route path="/kiosk" element={<Kiosk />} />
-<Route path="/logout" element={<Logout />} />
-<Route path="/manual-ingest" element={<ManualIngest />} />
-<Route path="/manual_ingest" element={<ManualIngest />} />
-<Route path="/production-input" element={<ProductionInput />} />
-<Route path="/ProjectOptions" element={<ProjectOptions />} />
-<Route path="/finance-input" element={<FinanceInput />} />
-<Route path="/financial-report" element={<FinancialReport />} />
-<Route path="/FinancialReport" element={<FinancialReport />} />
-<Route path="/FinanceSetup" element={<FinanceSetup />} />
-<Route path="/iPad/:id" element={<IpadControl />} />
-<Route path="/ipad-control/:id" element={<IpadControl />} />
-<Route path="/project-search" element={<ProjectSearch />} />
-<Route path="/upload" element={<ArchiveUpload />} />
-<Route path="/staff-management" element={<StaffManagement />} />
-<Route path="/StaffManagement" element={<StaffManagement />} />
-<Route path="/project-summary" element={<ProjectSummary />} />
-<Route path="/ProjectSummary" element={<ProjectSummary />} />
-<Route path="/upcoming-projects" element={<UpcomingProjects />} />
-<Route path="/UpcomingProjects" element={<UpcomingProjects />} />
-<Route path="/workers" element={<Workers />} />
+      <Route path="/AgentPortal" element={<AgentPortal />} />
 
+      {/* --- PROTECTED DASHBOARD ROUTES --- */}
+      <Route path="/admin" element={<DashboardGuard><Admin /></DashboardGuard>} />
+      <Route path="/agent-management" element={<DashboardGuard><AgentManagement /></DashboardGuard>} />
+      <Route path="/bonuses" element={<DashboardGuard><Bonuses /></DashboardGuard>} />
+      <Route path="/bonus-reports" element={<DashboardGuard><BonusReports /></DashboardGuard>} />
+      <Route path="/commisions" element={<DashboardGuard><Commisions /></DashboardGuard>} /> 
+      
+      <Route path="/manual-ingest" element={<DashboardGuard><ManualIngest /></DashboardGuard>} />
+      <Route path="/manual_ingest" element={<DashboardGuard><ManualIngest /></DashboardGuard>} />
+      <Route path="/production-input" element={<DashboardGuard><ProductionInput /></DashboardGuard>} />
+      <Route path="/ProjectOptions" element={<DashboardGuard><ProjectOptions /></DashboardGuard>} />
+      <Route path="/finance-input" element={<DashboardGuard><FinanceInput /></DashboardGuard>} />
+      <Route path="/financial-report" element={<DashboardGuard><FinancialReport /></DashboardGuard>} />
+      <Route path="/FinancialReport" element={<DashboardGuard><FinancialReport /></DashboardGuard>} />
+      <Route path="/FinanceSetup" element={<DashboardGuard><FinanceSetup /></DashboardGuard>} />
+<Route path="/Finance-Setup" element={<DashboardGuard><FinanceSetup /></DashboardGuard>} />
+      <Route path="/iPad/:id" element={<DashboardGuard><IpadControl /></DashboardGuard>} />
+      <Route path="/ipad-control/:id" element={<DashboardGuard><IpadControl /></DashboardGuard>} />
+      <Route path="/project-search" element={<DashboardGuard><ProjectSearch /></DashboardGuard>} />
+      <Route path="/upload" element={<DashboardGuard><ArchiveUpload /></DashboardGuard>} />
+      <Route path="/staff-management" element={<DashboardGuard><StaffManagement /></DashboardGuard>} />
+      <Route path="/StaffManagement" element={<DashboardGuard><StaffManagement /></DashboardGuard>} />
+      <Route path="/project-summary" element={<DashboardGuard><ProjectSummary /></DashboardGuard>} />
+      <Route path="/ProjectSummary" element={<DashboardGuard><ProjectSummary /></DashboardGuard>} />
+      <Route path="/upcoming-projects" element={<DashboardGuard><UpcomingProjects /></DashboardGuard>} />
+      <Route path="/UpcomingProjects" element={<DashboardGuard><UpcomingProjects /></DashboardGuard>} />
+      <Route path="/workers" element={<DashboardGuard><Workers /></DashboardGuard>} />
 
-
+      <Route path="/logout" element={<Logout />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

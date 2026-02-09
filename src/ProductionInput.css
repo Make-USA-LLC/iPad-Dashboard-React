@@ -113,27 +113,62 @@
     color: white; 
     font-size: 13px; 
     transition: 0.2s;
-    
-    /* PREVENT STRETCHING */
     width: auto;
     min-width: fit-content;
 }
 .btn-blue { background: #3498db; }
 .btn-blue:hover { background: #2980b9; }
 
-.btn-text { background: none; padding: 0 10px; font-weight: bold; cursor: pointer; border: none; font-size: 13px; display: flex; align-items: center; gap: 5px; }
-.btn-red-text { color: #e74c3c; }
-.btn-orange-text { color: #f39c12; }
+/* FIX: Force colors and remove background/borders */
+.btn-text { 
+    background: transparent !important; 
+    border: none !important; 
+    padding: 0 10px; 
+    font-weight: bold; 
+    cursor: pointer; 
+    font-size: 13px; 
+    display: flex; 
+    align-items: center; 
+    gap: 5px; 
+}
+
+/* Force specific text colors */
+.btn-red-text { color: #e74c3c !important; }
+.btn-orange-text { color: #f39c12 !important; }
+
 .btn-text:hover { text-decoration: underline; }
 
 .pi-time-badge { background: #ecf0f1; color: #555; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
 
 /* CHECKBOX & SECTIONS */
 .pi-chk-container { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer; user-select: none; }
-.pi-chk-label { font-weight: bold; color: #2c3e50; font-size: 14px; }
 
-.pi-bonus-box { border: 1px solid #e1e5eb; background: #fff; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
-.pi-reason-box { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee; animation: fadeIn 0.2s; }
+/* FIX: Prevent checkbox stretching */
+.pi-chk-container input { 
+    width: 16px !important; 
+    height: 16px !important; 
+    cursor: pointer; 
+    margin-right: 10px;
+    flex-shrink: 0; 
+}
+
+.pi-chk-label { font-weight: bold; color: #2c3e50; font-size: 14px; cursor: pointer; }
+
+/* BONUS SECTION */
+.pi-bonus-box { 
+    border: 1px solid #e1e5eb; 
+    background: #fff; 
+    padding: 15px; 
+    border-radius: 6px; 
+    margin-bottom: 20px; 
+}
+
+.pi-reason-box { 
+    margin-top: 10px; 
+    padding-top: 10px; 
+    border-top: 1px dashed #eee; 
+    animation: fadeIn 0.2s; 
+}
 
 .pi-adjust-box { background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #e1e5eb; }
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import './iPad.css'; // Correct CSS import
+import './iPad.css'; 
 import { db, auth, loadUserData } from './firebase_config.jsx';
 import { doc, getDoc, updateDoc, deleteDoc, addDoc, collection, query, orderBy, onSnapshot, serverTimestamp, getDocs } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
@@ -90,12 +90,14 @@ const IPad = () => {
         const cSnap = await getDoc(doc(db, "config", "project_options"));
         if (cSnap.exists()) setDropdowns(cSnap.data());
 
+        // --- FIXED WORKER MAPPING HERE ---
         const wSnap = await getDocs(collection(db, "workers"));
         const wMap = {};
         wSnap.forEach(d => {
             const w = d.data();
-            const name = w.name || `${w.firstName} ${w.lastName}`;
-            if (w.workerId) wMap[w.workerId] = name;
+            // In Workers.jsx, the ID is the document ID (d.id), NOT a field inside the data
+            const name = w.name || "Unknown Worker";
+            wMap[d.id] = name; 
         });
         setWorkersMap(wMap);
 
