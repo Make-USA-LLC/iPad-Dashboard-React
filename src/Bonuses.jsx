@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Bonuses.css';
-// We are defining the calculation logic internally to match the HTML exactly
-// instead of importing it, to ensure the math is identical.
 import { db, auth, loadUserData } from './firebase_config.jsx';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 
-// --- INTERNAL CALCULATION LOGIC (Matches HTML) ---
+// --- INTERNAL CALCULATION LOGIC ---
 const sanitize = (str) => (str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
 const calculateBonusesInternal = (report, globalConfig) => {
@@ -16,21 +14,17 @@ const calculateBonusesInternal = (report, globalConfig) => {
     const COST_PER_HR = parseFloat(usedConfig.costPerHour) || 0;
 
     // 2. Calculate Profit
-    // Check if we use 'minutes' (from workerLog) or 'seconds' (legacy)
     let totalHours = 0;
     if (report.workerLog) {
-         // Sum minutes from log
          const totalMin = report.workerLog.reduce((acc, w) => acc + (w.minutes || 0), 0);
          totalHours = totalMin / 60;
     } else {
-         // Fallback to start/end seconds
          const sec = (report.originalSeconds || 0) - (report.finalSeconds || 0);
          totalHours = sec > 0 ? sec / 3600 : 0;
     }
 
     const laborCost = totalHours * COST_PER_HR;
 
-    // Agent Commission
     let comm = 0;
     if (report.agentName && usedConfig.agents) {
         const ag = usedConfig.agents.find(a => a.name === report.agentName);
@@ -50,24 +44,20 @@ const calculateBonusesInternal = (report, globalConfig) => {
     let workersOnly = [];
     let leaderMin = 0;
     let maxWorkerMin = 0;
-    let allWorkersMap = {}; // To store final results
+    let allWorkersMap = {};
 
-    // If using the older 'workers' object/array format, convert to standardized array
     let standardizedLog = log;
     if (log.length === 0 && report.workers) {
-        // Handle legacy array or object
         if (Array.isArray(report.workers)) standardizedLog = report.workers;
         else standardizedLog = Object.entries(report.workers).map(([k, v]) => ({ name: k, ...v }));
     }
 
     standardizedLog.forEach(w => {
-        // Normalize time to minutes
         let minutes = w.minutes || 0;
         if (!w.minutes && w.seconds) minutes = w.seconds / 60;
 
         if (minutes > maxWorkerMin) maxWorkerMin = minutes;
 
-        // Check if this person is the leader
         if (sanitize(w.name) === safeLeader && safeLeader.length > 0) {
             leaderMin = minutes;
         } else {
@@ -75,7 +65,6 @@ const calculateBonusesInternal = (report, globalConfig) => {
         }
     });
 
-    // Fallback if leader wasn't in the log but is assigned
     if (report.leader && leaderMin === 0 && totalHours > 0) {
         leaderMin = totalHours * 60;
     }
@@ -84,13 +73,42 @@ const calculateBonusesInternal = (report, globalConfig) => {
     let leaderPool = 0;
     let workerPool = 0;
     
-    // Get Method
     const method = report.bonusCalcMethod?.type || 'standard_percent';
     const params = report.bonusCalcMethod || {};
 
     if (method === 'standard_percent') {
-        leaderPool = Math.max(0, profit * ((usedConfig.leaderPoolPercent || 0) / 100));
-        workerPool = Math.max(0, profit * ((usedConfig.workerPoolPercent || 0) / 100));
+        // --- NEW: TEAM SIZE LOGIC ---
+        // Count = Leader (if exists) + Workers
+        const leaderCount = (report.leader && leaderMin > 0) ? 1 : 0;
+        const totalCount = leaderCount + workersOnly.length;
+
+        // Default to Standard (4+)
+        let l_pct = usedConfig.leaderPoolPercent || 0;
+        let w_pct = usedConfig.workerPoolPercent || 0;
+
+        if (totalCount === 1) {
+            // 1 Employee: Use "Big Box" (workerPoolPercent_1) for pool, 0 for leader
+            // If the 1 person is a leader, they will get this pool via distribution logic if we put it in workerPool? 
+            // Actually, if we put it in workerPool, and they are marked as leader, they might NOT get it depending on distribution.
+            // BETTER STRATEGY: 
+            // If they are a leader, put it in leaderPool. If worker, put in workerPool.
+            // BUT simplified: Just put it in the pool matching their role.
+            const val = usedConfig.workerPoolPercent_1 || 0;
+            if (leaderCount === 1) { l_pct = val; w_pct = 0; }
+            else { l_pct = 0; w_pct = val; }
+        }
+        else if (totalCount === 2) {
+            l_pct = usedConfig.leaderPoolPercent_2 || 0;
+            w_pct = usedConfig.workerPoolPercent_2 || 0;
+        }
+        else if (totalCount === 3) {
+            l_pct = usedConfig.leaderPoolPercent_3 || 0;
+            w_pct = usedConfig.workerPoolPercent_3 || 0;
+        }
+
+        leaderPool = Math.max(0, profit * (l_pct / 100));
+        workerPool = Math.max(0, profit * (w_pct / 100));
+        // ---------------------------
     } 
     else if (method === 'leader_percent') {
         leaderPool = Math.max(0, profit * ((params.l_pct || 0) / 100));
@@ -111,7 +129,7 @@ const calculateBonusesInternal = (report, globalConfig) => {
         workerPool = (wThr>0 && profit>0) ? Math.floor(profit/wThr)*wAmt*workersOnly.length : 0;
     }
 
-    // 5. Leader Adjustment Rule (The "30 Minute Rule" from HTML)
+    // 5. Leader Adjustment Rule (30 Min Rule)
     if (method !== 'leader_percent' && leaderMin > 0 && maxWorkerMin > 0) {
         const diff = maxWorkerMin - leaderMin;
         if (diff > 30) {
@@ -126,7 +144,6 @@ const calculateBonusesInternal = (report, globalConfig) => {
     const distType = params.distribution || 'hours';
     const totalWorkerMin = workersOnly.reduce((sum, w) => sum + w.minutes, 0);
 
-    // Add Leader Result
     if (report.leader) {
         allWorkersMap[sanitize(report.leader)] = {
             name: report.leader,
@@ -137,7 +154,6 @@ const calculateBonusesInternal = (report, globalConfig) => {
         };
     }
 
-    // Add Worker Results
     workersOnly.forEach(w => {
         let share = 0;
         if (workerPool > 0) {
@@ -154,7 +170,6 @@ const calculateBonusesInternal = (report, globalConfig) => {
         };
     });
 
-    // 7. Apply Custom Bonus Overrides
     const customBonuses = report.customBonuses || {};
     let finalTotalBonus = 0;
     
@@ -178,18 +193,16 @@ const Bonuses = () => {
     const [view, setView] = useState('unpaid');
     const [reports, setReports] = useState([]);
     const [config, setConfig] = useState({});
-    const [processedData, setProcessedData] = useState([]); // For the summary view
+    const [processedData, setProcessedData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [expandedRows, setExpandedRows] = useState({});
     const [showSummary, setShowSummary] = useState(true);
 
-    // --- PAY MODAL STATE ---
     const [showPayModal, setShowPayModal] = useState(false);
     const [payDate, setPayDate] = useState('');
     const [payTargetId, setPayTargetId] = useState(null);
     const [payAmount, setPayAmount] = useState(0);
 
-    // --- SETTINGS MODAL STATE ---
     const [showCalcModal, setShowCalcModal] = useState(false);
     const [targetReportId, setTargetReportId] = useState(null);
     const [calcForm, setCalcForm] = useState({
@@ -268,20 +281,16 @@ const Bonuses = () => {
         list.sort((a,b) => (b.completedAt?.seconds||0) - (a.completedAt?.seconds||0));
         setReports(list);
 
-        // Build Summary Data for "Pending Breakdown"
         if (view === 'unpaid') {
             const summaryMap = {};
             list.forEach(report => {
                 const result = calculateBonusesInternal(report, currentConfig);
                 result.workers.forEach(w => {
-                    // Only count positive amounts
                     if (w.amount === 0) return;
-                    
                     const safeKey = sanitize(w.name);
                     if(!summaryMap[safeKey]) {
                         summaryMap[safeKey] = { name: w.name, total: 0, items: [] };
                     }
-                    
                     summaryMap[safeKey].total += w.amount;
                     summaryMap[safeKey].items.push({
                         company: report.company,
@@ -292,7 +301,6 @@ const Bonuses = () => {
                     });
                 });
             });
-            // Convert map to array and sort by total
             const summaryArray = Object.values(summaryMap).sort((a,b) => b.total - a.total);
             setProcessedData(summaryArray);
         }
@@ -306,7 +314,6 @@ const Bonuses = () => {
     const handleLogout = () => signOut(auth).then(() => window.location.href = '/');
     const toggleRow = (name) => setExpandedRows(prev => ({ ...prev, [name]: !prev[name] }));
 
-    // --- PAY ACTIONS ---
     const clickPay = (reportId, amount) => {
         const d = new Date();
         const day = d.getDay(); 
@@ -322,14 +329,23 @@ const Bonuses = () => {
 
     const confirmPay = async () => {
         if(!payDate) return alert("Select Date");
-        
         const parts = payDate.split('-');
-        const fmtDate = `${parts[1]}/${parts[2]}/${parts[0]}`; // MM/DD/YYYY
+        const fmtDate = `${parts[1]}/${parts[2]}/${parts[0]}`; 
 
         const snapshot = {
             costPerHour: parseFloat(config.costPerHour) || 0,
+            
             leaderPoolPercent: parseFloat(config.leaderPoolPercent) || 0,
             workerPoolPercent: parseFloat(config.workerPoolPercent) || 0,
+            
+            leaderPoolPercent_3: parseFloat(config.leaderPoolPercent_3) || 0,
+            workerPoolPercent_3: parseFloat(config.workerPoolPercent_3) || 0,
+            
+            leaderPoolPercent_2: parseFloat(config.leaderPoolPercent_2) || 0,
+            workerPoolPercent_2: parseFloat(config.workerPoolPercent_2) || 0,
+
+            workerPoolPercent_1: parseFloat(config.workerPoolPercent_1) || 0,
+            
             agents: config.agents || []
         };
 
@@ -367,7 +383,6 @@ const Bonuses = () => {
         loadData(config);
     };
 
-    // --- CALCULATION MODAL LOGIC ---
     const openCalcModal = (report) => {
         setTargetReportId(report.id);
         const m = report.bonusCalcMethod || {};
@@ -399,14 +414,9 @@ const Bonuses = () => {
         loadData(config);
     };
 
-    // This wrapper calls the internal logic and formats it for the card
     const getCardData = (r) => {
         const result = calculateBonusesInternal(r, config);
-        
-        // Convert the result workers to the format needed for the card
-        // Sort: High Bonus first, then High Hours
         result.workers.sort((a,b) => b.amount - a.amount || b.minutes - a.minutes);
-        
         return { 
             workers: result.workers, 
             totalBonus: result.totalBonus, 
@@ -420,11 +430,7 @@ const Bonuses = () => {
     return (
         <div className="bonuses-page-wrapper">
             <div className="bonuses-top-bar">
-                <div>
-                    <button onClick={() => navigate('/')} style={{border:'none', background:'none', fontWeight:'bold', cursor:'pointer'}}>&larr; Dashboard</button>
-                </div>
-                
-                {/* CENTERED TOGGLE */}
+                <div><button onClick={() => navigate('/')} style={{border:'none', background:'none', fontWeight:'bold', cursor:'pointer'}}>&larr; Dashboard</button></div>
                 <div style={{display:'flex', justifyContent:'center'}}>
                     <div className="view-toggle">
                         <button className={`toggle-btn ${view==='unpaid'?'active':''}`} onClick={() => setView('unpaid')}>Pending</button>
@@ -432,7 +438,6 @@ const Bonuses = () => {
                         <button className={`toggle-btn ${view==='ineligible'?'active ineligible':''}`} onClick={() => setView('ineligible')}>Ineligible</button>
                     </div>
                 </div>
-
                 <div style={{textAlign:'right'}}>
                     <button onClick={handleLogout} style={{color:'#e74c3c', border:'none', background:'none', fontWeight:'bold', cursor:'pointer'}}>Sign Out</button>
                 </div>
@@ -476,7 +481,6 @@ const Bonuses = () => {
                     {reports.map(r => {
                         const { workers, totalBonus, profit } = getCardData(r);
                         const headerClass = view === 'paid' ? 'card-header paid-header' : 'card-header';
-
                         return (
                             <div key={r.id} className="project-card">
                                 <div className={headerClass}>
@@ -542,7 +546,6 @@ const Bonuses = () => {
                                         <div className="btn-card btn-solid-green" onClick={() => clickPay(r.id, totalBonus)}>Pay (${totalBonus.toFixed(2)})</div>
                                     </div>
                                 )}
-
                                 {view === 'paid' && (
                                     <div className="history-footer">
                                         <span className="history-label">Total Paid</span>
@@ -555,7 +558,6 @@ const Bonuses = () => {
                 </div>
             </div>
 
-            {/* SETTINGS MODAL */}
             {showCalcModal && (
                 <div className="modal-overlay">
                     <div className="modal-content">
@@ -582,7 +584,6 @@ const Bonuses = () => {
                                 </div>
                             </div>
                         )}
-
                         {calcForm.type === 'fixed_amount' && (
                             <div className="section-box">
                                 <div className="flex-row">
@@ -591,7 +592,6 @@ const Bonuses = () => {
                                 </div>
                             </div>
                         )}
-
                         {calcForm.type === 'legacy_interval' && (
                             <div className="section-box">
                                 <div className="flex-row">
@@ -604,7 +604,6 @@ const Bonuses = () => {
                                 </div>
                             </div>
                         )}
-
                         <div className="input-group">
                             <label>Worker Distribution</label>
                             <select value={calcForm.distribution} onChange={e => setCalcForm({...calcForm, distribution: e.target.value})}>
@@ -612,13 +611,11 @@ const Bonuses = () => {
                                 <option value="even">Even Split</option>
                             </select>
                         </div>
-
                         <button className="btn-confirm" onClick={saveCalcSettings}>Save Settings</button>
                     </div>
                 </div>
             )}
-
-            {/* PAY DATE MODAL */}
+            
             {showPayModal && (
                 <div className="modal-overlay">
                     <div className="modal-content">

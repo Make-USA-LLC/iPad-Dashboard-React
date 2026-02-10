@@ -540,7 +540,7 @@ const ProjectSearch = () => {
                         </div>
                     </div>
 
-                    <div style={{overflowX:'auto'}}>
+                    <div style={{overflowY: 'auto', maxHeight: 'calc(100vh - 220px)'}}>
                         <table className="ps-table">
                             <thead>
                                 <tr>
@@ -548,7 +548,14 @@ const ProjectSearch = () => {
                                         visibleColumns.has(col) && (
                                             <th key={col} 
                                                 onClick={() => handleSort(col, undefined, !sortAsc)}
-                                                style={{textAlign: isNumericCol(col) ? 'right' : 'left'}}
+                                                style={{
+                                                    textAlign: isNumericCol(col) ? 'right' : 'left',
+                                                    position: 'sticky',
+                                                    top: 0,
+                                                    background: '#f8f9fa',
+                                                    zIndex: 10,
+                                                    boxShadow: '0 2px 2px -1px rgba(0,0,0,0.1)'
+                                                }}
                                             >
                                                 {col} {sortCol === col ? (sortAsc ? '↑' : '↓') : ''}
                                             </th>

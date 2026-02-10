@@ -13,8 +13,18 @@ const FinanceSetup = () => {
     // Data State
     const [configData, setConfigData] = useState({
         costPerHour: 0,
+        // 4+ Employees (Standard)
         leaderPoolPercent: 0,
         workerPoolPercent: 0,
+        // 3 Employees
+        leaderPoolPercent_3: 0,
+        workerPoolPercent_3: 0,
+        // 2 Employees
+        leaderPoolPercent_2: 0,
+        workerPoolPercent_2: 0,
+        // 1 Employee
+        workerPoolPercent_1: 0, // "Big text box" (Total %)
+
         agents: [],
         projectTypes: []
     });
@@ -59,7 +69,7 @@ const FinanceSetup = () => {
             setCanEdit(edit);
             startListener();
         } else {
-            setLoading(false); // Renders denied message
+            setLoading(false);
         }
     };
 
@@ -74,15 +84,30 @@ const FinanceSetup = () => {
                 const data = docSnap.data();
                 setConfigData({
                     costPerHour: data.costPerHour || 0,
+                    
                     leaderPoolPercent: data.leaderPoolPercent || 0,
                     workerPoolPercent: data.workerPoolPercent || 0,
+
+                    leaderPoolPercent_3: data.leaderPoolPercent_3 || 0,
+                    workerPoolPercent_3: data.workerPoolPercent_3 || 0,
+
+                    leaderPoolPercent_2: data.leaderPoolPercent_2 || 0,
+                    workerPoolPercent_2: data.workerPoolPercent_2 || 0,
+
+                    workerPoolPercent_1: data.workerPoolPercent_1 || 0,
+
                     agents: data.agents || [],
                     projectTypes: data.projectTypes || []
                 });
             } else {
                 // Initialize if missing
                 setDoc(configRef, { 
-                    costPerHour: 0, leaderPoolPercent: 0, workerPoolPercent: 0, agents: [], projectTypes: [] 
+                    costPerHour: 0, 
+                    leaderPoolPercent: 0, workerPoolPercent: 0,
+                    leaderPoolPercent_3: 0, workerPoolPercent_3: 0,
+                    leaderPoolPercent_2: 0, workerPoolPercent_2: 0,
+                    workerPoolPercent_1: 0,
+                    agents: [], projectTypes: [] 
                 });
             }
             setLoading(false);
@@ -91,21 +116,28 @@ const FinanceSetup = () => {
 
     // --- HANDLERS ---
 
-    // 1. Save Scalar Values (Costs & Percentages)
     const handleSaveConstants = async () => {
         if (!canEdit) return;
         try {
             const configRef = doc(db, "config", "finance");
             await updateDoc(configRef, {
                 costPerHour: parseFloat(configData.costPerHour),
+                
                 leaderPoolPercent: parseFloat(configData.leaderPoolPercent),
-                workerPoolPercent: parseFloat(configData.workerPoolPercent)
+                workerPoolPercent: parseFloat(configData.workerPoolPercent),
+
+                leaderPoolPercent_3: parseFloat(configData.leaderPoolPercent_3),
+                workerPoolPercent_3: parseFloat(configData.workerPoolPercent_3),
+
+                leaderPoolPercent_2: parseFloat(configData.leaderPoolPercent_2),
+                workerPoolPercent_2: parseFloat(configData.workerPoolPercent_2),
+
+                workerPoolPercent_1: parseFloat(configData.workerPoolPercent_1),
             });
             alert("Configuration Saved");
         } catch(e) { alert("Error saving: " + e.message); }
     };
 
-    // 2. Agents
     const handleAddAgent = async () => {
         if (!canEdit || !newAgentName) return;
         const configRef = doc(db, "config", "finance");
@@ -123,7 +155,6 @@ const FinanceSetup = () => {
         await updateDoc(configRef, { agents: updatedAgents });
     };
 
-    // 3. Project Types
     const handleAddType = async () => {
         if (!canEdit || !newType) return;
         const configRef = doc(db, "config", "finance");
@@ -143,7 +174,36 @@ const FinanceSetup = () => {
     const handleLogout = () => signOut(auth).then(() => navigate('/'));
 
     if (loading) return <div style={{padding:'50px', textAlign:'center'}}>Loading Config...</div>;
-    if (!configData.costPerHour && configData.costPerHour !== 0) return <div className="fs-denied">Access Denied</div>; // Fallback
+    if (!configData.costPerHour && configData.costPerHour !== 0) return <div className="fs-denied">Access Denied</div>;
+
+    // Helper for rendering rows
+    const renderRow = (label, l_field, w_field) => (
+        <div className="fs-form-row" style={{borderBottom:'1px solid #eee', paddingBottom:'15px', marginBottom:'15px', alignItems:'center'}}>
+            <div style={{width:'150px', fontWeight:'bold', color:'#34495e'}}>{label}</div>
+            <div style={{flex:1}}>
+                <label className="fs-label" style={{color:'#2980b9'}}>Leader %</label>
+                <div className="fs-input-suffix">
+                    <input type="number" className="fs-input" step="0.1" 
+                        value={configData[l_field]}
+                        onChange={(e) => setConfigData({...configData, [l_field]: e.target.value})}
+                        disabled={!canEdit}
+                    />
+                    <span className="fs-suffix-text">%</span>
+                </div>
+            </div>
+            <div style={{flex:1, marginLeft:'15px'}}>
+                <label className="fs-label" style={{color:'#27ae60'}}>Pool %</label>
+                <div className="fs-input-suffix">
+                    <input type="number" className="fs-input" step="0.1" 
+                        value={configData[w_field]}
+                        onChange={(e) => setConfigData({...configData, [w_field]: e.target.value})}
+                        disabled={!canEdit}
+                    />
+                    <span className="fs-suffix-text">%</span>
+                </div>
+            </div>
+        </div>
+    );
 
     return (
         <div className="fs-wrapper">
@@ -175,45 +235,33 @@ const FinanceSetup = () => {
 
                 {/* BONUS STRUCTURE */}
                 <div className="fs-card" style={{borderLeft: '5px solid #3498db'}}>
-                    <h2>Standard Bonus Structure</h2>
+                    <h2>Bonus Structure</h2>
                     <div className="fs-section-desc">
-                        Bonuses are calculated as a percentage of <strong>Net Profit</strong>.<br/>
-                        <em>(Net Profit = Invoice - Labor Cost - Commissions)</em>
-                    </div>
-
-                    <div className="fs-form-row">
-                        <div style={{flex:1}}>
-                            <label className="fs-label" style={{color:'#2980b9'}}>Line Leader Pool</label>
-                            <div className="fs-input-suffix">
-                                <input 
-                                    type="number" 
-                                    className="fs-input" 
-                                    step="0.1" 
-                                    value={configData.leaderPoolPercent}
-                                    onChange={(e) => setConfigData({...configData, leaderPoolPercent: e.target.value})}
-                                    disabled={!canEdit}
-                                />
-                                <span className="fs-suffix-text">%</span>
-                            </div>
-                        </div>
-                        
-                        <div style={{flex:1}}>
-                            <label className="fs-label" style={{color:'#27ae60'}}>Worker Pool (Non-Leaders)</label>
-                            <div className="fs-input-suffix">
-                                <input 
-                                    type="number" 
-                                    className="fs-input" 
-                                    step="0.1" 
-                                    value={configData.workerPoolPercent}
-                                    onChange={(e) => setConfigData({...configData, workerPoolPercent: e.target.value})}
-                                    disabled={!canEdit}
-                                />
-                                <span className="fs-suffix-text">%</span>
-                            </div>
-                        </div>
+                        Define percentages of <strong>Net Profit</strong> based on team size.<br/>
                     </div>
                     
-                    <p style={{fontSize:'12px', color:'#999', marginTop:0}}>* Worker pool is split based on hours worked by default.</p>
+                    {renderRow("4+ Employees", "leaderPoolPercent", "workerPoolPercent")}
+                    {renderRow("3 Employees", "leaderPoolPercent_3", "workerPoolPercent_3")}
+                    {renderRow("2 Employees", "leaderPoolPercent_2", "workerPoolPercent_2")}
+
+                    {/* 1 Employee (Big Box) */}
+                    <div className="fs-form-row" style={{alignItems:'center'}}>
+                        <div style={{width:'150px', fontWeight:'bold', color:'#34495e'}}>1 Employee</div>
+                        <div style={{flex:1}}>
+                            <label className="fs-label" style={{color:'#2c3e50'}}>Total Bonus %</label>
+                            <div className="fs-input-suffix">
+                                <input type="number" className="fs-input" step="0.1" 
+                                    style={{fontSize:'18px', padding:'10px', fontWeight:'bold'}}
+                                    value={configData.workerPoolPercent_1}
+                                    onChange={(e) => setConfigData({...configData, workerPoolPercent_1: e.target.value})}
+                                    disabled={!canEdit}
+                                />
+                                <span className="fs-suffix-text" style={{fontSize:'18px'}}>%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p style={{fontSize:'12px', color:'#999', marginTop:'15px'}}>* Worker pool is split based on hours worked by default.</p>
                     {canEdit && (
                         <button className="btn btn-green" style={{width:'100%', marginTop:'10px'}} onClick={handleSaveConstants}>
                             Save Configuration
@@ -244,7 +292,6 @@ const FinanceSetup = () => {
                                 {canEdit && <button className="btn-red-small" onClick={() => handleDeleteAgent(i)}>Del</button>}
                             </li>
                         ))}
-                        {configData.agents.length === 0 && <li style={{padding:'15px', color:'#999'}}>No agents defined.</li>}
                     </ul>
                 </div>
 
@@ -267,7 +314,6 @@ const FinanceSetup = () => {
                                 {canEdit && <button className="btn-red-small" onClick={() => handleDeleteType(i)}>Del</button>}
                             </li>
                         ))}
-                        {configData.projectTypes.length === 0 && <li style={{padding:'15px', color:'#999'}}>No types defined.</li>}
                     </ul>
                 </div>
 
