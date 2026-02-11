@@ -542,7 +542,7 @@ const Bonuses = () => {
 
                                 {view === 'unpaid' && (
                                     <div className="card-footer">
-                                        <div className="btn-card btn-outline-red" onClick={() => handleMarkIneligible(r.id)}>Block</div>
+                                        <div className="btn-card btn-outline-red" onClick={() => handleMarkIneligible(r.id)}>Mark Ineligible</div>
                                         <div className="btn-card btn-solid-green" onClick={() => clickPay(r.id, totalBonus)}>Pay (${totalBonus.toFixed(2)})</div>
                                     </div>
                                 )}
