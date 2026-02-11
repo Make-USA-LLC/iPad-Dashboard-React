@@ -7,7 +7,7 @@ import {
 import { checkPermission, loadUserData } from './firebase_config'; 
 import './FinanceInput.css';
 
-const ProjectCard = ({ data, agents, onProcess, onDelete, canEdit }) => {
+const ProjectCard = ({ data, agents, companyMap, onProcess, onDelete, canEdit }) => {
   // Parse Dates
   const dateStr = data.completedAt ? new Date(data.completedAt.seconds * 1000).toLocaleDateString() : 'Unknown';
   
@@ -19,7 +19,17 @@ const ProjectCard = ({ data, agents, onProcess, onDelete, canEdit }) => {
   const [desc, setDesc] = useState(data.financeDesc || `${data.project} - ${data.size}`);
   const [totalUnits, setTotalUnits] = useState(data.totalUnits || '');
   const [invoiceAmount, setInvoiceAmount] = useState(data.invoiceAmount || '');
-  const [selectedAgent, setSelectedAgent] = useState(data.agentName || '');
+  
+  // AUTO-ASSIGN LOGIC
+  const [selectedAgent, setSelectedAgent] = useState(() => {
+    // 1. If agent is already saved on this specific report, use it
+    if (data.agentName) return data.agentName;
+    // 2. Otherwise, check if this company has an auto-assigned agent
+    if (companyMap && companyMap[data.company]) return companyMap[data.company];
+    // 3. Default to none
+    return '';
+  });
+
   const [commExcluded, setCommExcluded] = useState(data.commissionExcluded || '');
   
   // Adjustment States
@@ -224,6 +234,7 @@ const FinanceInput = () => {
   const [accessDenied, setAccessDenied] = useState(false);
   const [canEdit, setCanEdit] = useState(false);
   const [agents, setAgents] = useState([]);
+  const [companyMap, setCompanyMap] = useState({}); // Stores company->agent map
   const [pendingProjects, setPendingProjects] = useState([]);
 
   useEffect(() => {
@@ -248,7 +259,11 @@ const FinanceInput = () => {
   const initData = async () => {
     try {
       const configSnap = await getDoc(doc(db, "config", "finance"));
-      if (configSnap.exists()) setAgents(configSnap.data().agents || []);
+      if (configSnap.exists()) {
+          const d = configSnap.data();
+          setAgents(d.agents || []);
+          setCompanyMap(d.companyMap || {});
+      }
 
       const q = query(collection(db, "reports"), orderBy("completedAt", "desc"), limit(100));
       const snap = await getDocs(q);
@@ -385,6 +400,7 @@ const FinanceInput = () => {
               key={project.id} 
               data={project} 
               agents={agents}
+              companyMap={companyMap}
               canEdit={canEdit}
               onProcess={handleProcessItem}
               onDelete={handleDeleteItem}

@@ -23,16 +23,22 @@ const FinanceSetup = () => {
         leaderPoolPercent_2: 0,
         workerPoolPercent_2: 0,
         // 1 Employee
-        workerPoolPercent_1: 0, // "Big text box" (Total %)
+        workerPoolPercent_1: 0, 
 
         agents: [],
-        projectTypes: []
+        projectTypes: [],
+        companyMap: {} // Maps Company Name -> Agent Name
     });
 
     // Local inputs for "Add" forms
     const [newAgentName, setNewAgentName] = useState('');
     const [newAgentComm, setNewAgentComm] = useState('');
     const [newType, setNewType] = useState('');
+
+    // Local inputs for "Auto-Assign" form
+    const [availableCompanies, setAvailableCompanies] = useState([]);
+    const [assignCompany, setAssignCompany] = useState('');
+    const [assignAgent, setAssignAgent] = useState('');
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -45,6 +51,21 @@ const FinanceSetup = () => {
             }
         });
         return () => unsubscribe();
+    }, []);
+
+    // Load available companies from ProjectOptions for the dropdown
+    useEffect(() => {
+        const fetchCompanies = async () => {
+            try {
+                const snap = await getDoc(doc(db, "config", "project_options"));
+                if (snap.exists()) {
+                    setAvailableCompanies(snap.data().companies || []);
+                }
+            } catch (e) {
+                console.error("Error fetching companies:", e);
+            }
+        };
+        fetchCompanies();
     }, []);
 
     const checkAccess = async (user) => {
@@ -97,7 +118,8 @@ const FinanceSetup = () => {
                     workerPoolPercent_1: data.workerPoolPercent_1 || 0,
 
                     agents: data.agents || [],
-                    projectTypes: data.projectTypes || []
+                    projectTypes: data.projectTypes || [],
+                    companyMap: data.companyMap || {}
                 });
             } else {
                 // Initialize if missing
@@ -107,7 +129,7 @@ const FinanceSetup = () => {
                     leaderPoolPercent_3: 0, workerPoolPercent_3: 0,
                     leaderPoolPercent_2: 0, workerPoolPercent_2: 0,
                     workerPoolPercent_1: 0,
-                    agents: [], projectTypes: [] 
+                    agents: [], projectTypes: [], companyMap: {}
                 });
             }
             setLoading(false);
@@ -171,6 +193,43 @@ const FinanceSetup = () => {
         await updateDoc(configRef, { projectTypes: updatedTypes });
     };
 
+    // --- MAPPING HANDLERS ---
+
+    const handleAssignAgent = async () => {
+        if (!canEdit) return;
+        if (!assignCompany || !assignAgent) {
+            alert("Please select both a company and an agent.");
+            return;
+        }
+
+        const configRef = doc(db, "config", "finance");
+        const newMap = { ...configData.companyMap, [assignCompany]: assignAgent };
+        
+        try {
+            await updateDoc(configRef, { companyMap: newMap });
+            setAssignCompany('');
+            setAssignAgent('');
+        } catch (e) {
+            alert("Error saving assignment: " + e.message);
+        }
+    };
+
+    const handleDeleteAssignment = async (companyName) => {
+        if (!canEdit) return;
+        if (!window.confirm(`Remove auto-assignment for ${companyName}?`)) return;
+
+        const configRef = doc(db, "config", "finance");
+        const newMap = { ...configData.companyMap };
+        delete newMap[companyName];
+
+        try {
+            await updateDoc(configRef, { companyMap: newMap });
+        } catch (e) {
+            alert("Error removing assignment: " + e.message);
+        }
+    };
+
+
     const handleLogout = () => signOut(auth).then(() => navigate('/'));
 
     if (loading) return <div style={{padding:'50px', textAlign:'center'}}>Loading Config...</div>;
@@ -233,6 +292,91 @@ const FinanceSetup = () => {
                     </div>
                 </div>
 
+                {/* COMMISSION AGENTS */}
+                <div className="fs-card">
+                    <h2>Commission Agents</h2>
+                    {canEdit && (
+                        <div className="fs-form-row">
+                            <div style={{flex:2}}>
+                                <label className="fs-label">Company/Agent Name</label>
+                                <input className="fs-input" value={newAgentName} onChange={e => setNewAgentName(e.target.value)} />
+                            </div>
+                            <div style={{flex:1}}>
+                                <label className="fs-label">Default Comm %</label>
+                                <input className="fs-input" type="number" value={newAgentComm} onChange={e => setNewAgentComm(e.target.value)} />
+                            </div>
+                            <button className="btn btn-green" onClick={handleAddAgent}>Add</button>
+                        </div>
+                    )}
+                    <ul className="fs-list">
+                        {configData.agents.map((a, i) => (
+                            <li key={i}>
+                                <span><b>{a.name}</b> ({a.comm}%)</span>
+                                {canEdit && <button className="btn-red-small" onClick={() => handleDeleteAgent(i)}>Del</button>}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
+                {/* AUTO ASSIGN */}
+                <div className="fs-card">
+                    <h2>Auto-Assign Agents</h2>
+                    <p style={{fontSize:'13px', color:'#7f8c8d'}}>
+                        Automatically select an agent for new projects based on company.
+                    </p>
+                    
+                    {canEdit && (
+                        <div className="fs-form-row" style={{alignItems:'flex-end', background:'#f9f9f9', padding:'10px', borderRadius:'5px'}}>
+                            <div style={{flex:1}}>
+                                <label className="fs-label">Select Company</label>
+                                <select 
+                                    className="fs-input" 
+                                    value={assignCompany} 
+                                    onChange={(e) => setAssignCompany(e.target.value)}
+                                >
+                                    <option value="">- Choose Company -</option>
+                                    {availableCompanies.map((c, i) => (
+                                        <option key={i} value={c}>{c}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div style={{flex:1, marginLeft:'10px'}}>
+                                <label className="fs-label">Assign Agent</label>
+                                <select 
+                                    className="fs-input" 
+                                    value={assignAgent} 
+                                    onChange={(e) => setAssignAgent(e.target.value)}
+                                >
+                                    <option value="">- Choose Agent -</option>
+                                    {configData.agents.map((a, i) => (
+                                        <option key={i} value={a.name}>{a.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <button className="btn btn-green" style={{marginLeft:'10px'}} onClick={handleAssignAgent}>
+                                Assign
+                            </button>
+                        </div>
+                    )}
+
+                    <div style={{marginTop:'15px'}}>
+                        <ul className="fs-list">
+                            {Object.keys(configData.companyMap).length === 0 && <li style={{color:'#999', fontStyle:'italic'}}>No assignments yet.</li>}
+                            
+                            {Object.entries(configData.companyMap).map(([comp, ag], i) => (
+                                <li key={i}>
+                                    <span>
+                                        <strong>{comp}</strong> &rarr; <span style={{color:'#8e44ad'}}>{ag}</span>
+                                    </span>
+                                    {canEdit && (
+                                        <button className="btn-red-small" onClick={() => handleDeleteAssignment(comp)}>Remove</button>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+
                 {/* BONUS STRUCTURE */}
                 <div className="fs-card" style={{borderLeft: '5px solid #3498db'}}>
                     <h2>Bonus Structure</h2>
@@ -267,32 +411,6 @@ const FinanceSetup = () => {
                             Save Configuration
                         </button>
                     )}
-                </div>
-
-                {/* COMMISSION AGENTS */}
-                <div className="fs-card">
-                    <h2>Commission Agents</h2>
-                    {canEdit && (
-                        <div className="fs-form-row">
-                            <div style={{flex:2}}>
-                                <label className="fs-label">Company/Agent Name</label>
-                                <input className="fs-input" value={newAgentName} onChange={e => setNewAgentName(e.target.value)} />
-                            </div>
-                            <div style={{flex:1}}>
-                                <label className="fs-label">Default Comm %</label>
-                                <input className="fs-input" type="number" value={newAgentComm} onChange={e => setNewAgentComm(e.target.value)} />
-                            </div>
-                            <button className="btn btn-green" onClick={handleAddAgent}>Add</button>
-                        </div>
-                    )}
-                    <ul className="fs-list">
-                        {configData.agents.map((a, i) => (
-                            <li key={i}>
-                                <span><b>{a.name}</b> ({a.comm}%)</span>
-                                {canEdit && <button className="btn-red-small" onClick={() => handleDeleteAgent(i)}>Del</button>}
-                            </li>
-                        ))}
-                    </ul>
                 </div>
 
                 {/* PROJECT TYPES */}
